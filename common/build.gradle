@@ -1,0 +1,12 @@
+apply plugin: 'java-library'
+
+dependencies {
+  implementation libs.appengine
+  implementation libs.endpoints
+  implementation libs.firebase_admin
+  implementation libs.log4j_core
+
+  api libs.log4j_api
+
+  compileOnly libs.servlet_api
+}

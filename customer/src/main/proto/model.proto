@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package customer.model;
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = "com.yanivian.connect.customer.proto.model";
+option java_multiple_files = true;
+
+message Profile {
+  string UserID = 1;
+  string PhoneNumber = 2;
+  int64 CreatedTimestampMillis = 3;
+  optional string Name = 4;
+  optional string EmailAddress = 5;
+  optional int64 LastUpdatedTimestampMillis = 6;
+}

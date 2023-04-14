@@ -1,0 +1,24 @@
+ext {
+
+  libs = [
+    appengine : [
+      'com.google.appengine:appengine-api-1.0-sdk:+',
+      'com.google.appengine.tools:appengine-gcs-client:+'
+    ],
+    endpoints : [
+      'com.google.endpoints:endpoints-framework:+',
+      'com.google.endpoints:endpoints-framework-guice:+',
+    ],
+    firebase_admin: 'com.google.firebase:firebase-admin:+',
+    junit : 'junit:junit:4.+',
+    log4j_api : 'org.apache.logging.log4j:log4j-api:+',
+    log4j_core: 'org.apache.logging.log4j:log4j-core:+',
+    mockito : 'org.mockito:mockito-all:1.+',
+    protobuf : 'com.google.protobuf:protobuf-bom:+',
+    servlet_api : [
+      'javax.servlet:javax.servlet-api:3.1.0',
+      'javax.servlet.jsp:javax.servlet.jsp-api:2.3.1',
+    ],
+  ]
+
+}

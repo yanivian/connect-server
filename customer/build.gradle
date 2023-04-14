@@ -1,0 +1,25 @@
+apply plugin: 'com.google.cloud.tools.appengine'
+apply plugin: 'war'
+
+dependencies {
+  implementation project(":common")
+
+  implementation libs.appengine
+  implementation libs.endpoints
+  implementation libs.firebase_admin
+
+  compileOnly libs.servlet_api
+}
+
+appengine {
+  run {
+    port = 8080
+  }
+
+  deploy {
+    projectId = 'connect-on-firebase'
+    promote = true
+    stopPreviousVersion = true
+    version = 'alpha'
+  }
+}

@@ -3,6 +3,7 @@ package com.yanivian.connect.customer.endpoint;
 import java.io.IOException;
 import java.util.Optional;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,20 +26,20 @@ public final class CreateProfileEndpoint extends GuiceEndpoint {
   private static final String PARAM_EMAIL_ADDRESS = "emailAddress";
 
   @Inject
-  private AuthHelper authHelper;
+  private Provider<AuthHelper> authHelper;
   @Inject
-  private ProfileDao profileDao;
+  private Provider<ProfileDao> profileDao;
 
   public CreateProfileEndpoint() {}
 
   @Override
   protected void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    Optional<String> userID = authHelper.getVerifiedUserID(req, resp);
+    Optional<String> userID = authHelper.get().getVerifiedUserID(req, resp);
     if (!userID.isPresent()) {
       return;
     }
 
-    Optional<ProfileModel> optionalProfileModel = profileDao.getProfileByUserId(userID.get());
+    Optional<ProfileModel> optionalProfileModel = profileDao.get().getProfileByUserId(userID.get());
     if (optionalProfileModel.isPresent()) {
       resp.sendError(409, "Profile already exists: " + userID.get());
       return;
@@ -58,7 +59,7 @@ public final class CreateProfileEndpoint extends GuiceEndpoint {
       profile.setEmailAddress(emailAddress.get());
     }
 
-    ProfileModel profileModel = profileDao.createProfile(profile.build());
+    ProfileModel profileModel = profileDao.get().createProfile(profile.build());
 
     writeJsonResponse(resp, profileModel.toProto());
   }

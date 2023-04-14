@@ -9,12 +9,14 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
+import com.yanivian.connect.common.guice.GuiceEndpoint.AllowGet;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
 import com.yanivian.connect.customer.dao.ProfileDao;
 import com.yanivian.connect.customer.dao.ProfileDao.ProfileModel;
 import com.yanivian.connect.customer.proto.model.Profile;
 
-@WebServlet(name = "CreateProfileEndpoint", urlPatterns = {"/user/profile/create"})
+@WebServlet(name = "CreateProfileEndpoint", urlPatterns = {"/profile/create"})
+@AllowGet
 @AllowPost
 public final class CreateProfileEndpoint extends GuiceEndpoint {
 

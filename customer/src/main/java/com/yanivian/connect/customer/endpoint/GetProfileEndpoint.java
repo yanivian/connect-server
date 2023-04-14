@@ -7,11 +7,13 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
+import com.yanivian.connect.common.guice.GuiceEndpoint.AllowGet;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
 import com.yanivian.connect.customer.dao.ProfileDao;
 import com.yanivian.connect.customer.dao.ProfileDao.ProfileModel;
 
-@WebServlet(name = "GetProfileEndpoint", urlPatterns = {"/user/profile/get"})
+@WebServlet(name = "GetProfileEndpoint", urlPatterns = {"/profile/get"})
+@AllowGet
 @AllowPost
 public final class GetProfileEndpoint extends GuiceEndpoint {
 

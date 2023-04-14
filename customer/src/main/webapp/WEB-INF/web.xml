@@ -6,7 +6,7 @@
 
   <security-constraint>
     <web-resource-collection>
-      <web-resource-name>customer</web-resource-name>
+      <web-resource-name>default</web-resource-name>
       <url-pattern>/*</url-pattern>
     </web-resource-collection>
     <user-data-constraint>

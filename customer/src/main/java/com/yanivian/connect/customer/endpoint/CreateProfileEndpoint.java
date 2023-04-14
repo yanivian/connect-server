@@ -24,14 +24,12 @@ public final class CreateProfileEndpoint extends GuiceEndpoint {
   private static final String PARAM_NAME = "name";
   private static final String PARAM_EMAIL_ADDRESS = "emailAddress";
 
-  private final AuthHelper authHelper;
-  private final ProfileDao profileDao;
-
   @Inject
-  CreateProfileEndpoint(AuthHelper authHelper, ProfileDao profileDao) {
-    this.authHelper = authHelper;
-    this.profileDao = profileDao;
-  }
+  private AuthHelper authHelper;
+  @Inject
+  private ProfileDao profileDao;
+
+  public CreateProfileEndpoint() {}
 
   @Override
   protected void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {

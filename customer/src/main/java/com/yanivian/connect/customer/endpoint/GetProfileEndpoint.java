@@ -17,14 +17,12 @@ import com.yanivian.connect.customer.dao.ProfileDao.ProfileModel;
 @AllowPost
 public final class GetProfileEndpoint extends GuiceEndpoint {
 
-  private final AuthHelper authHelper;
-  private final ProfileDao profileDao;
-
   @Inject
-  GetProfileEndpoint(AuthHelper authHelper, ProfileDao profileDao) {
-    this.authHelper = authHelper;
-    this.profileDao = profileDao;
-  }
+  private AuthHelper authHelper;
+  @Inject
+  private ProfileDao profileDao;
+
+  public GetProfileEndpoint() {}
 
   @Override
   protected void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {

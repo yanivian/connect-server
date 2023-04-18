@@ -78,7 +78,7 @@ public class ImageDao {
     }
 
     public String getURL() {
-      return BlobDao.getImageUrl(getID());
+      return blobDao.getImageUrl(getID());
     }
 
     public ImageModel setUserID(String userID) {

@@ -2,11 +2,14 @@ package com.yanivian.connect.common.guice;
 
 import java.io.IOException;
 import java.time.Clock;
-
 import javax.inject.Singleton;
-
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.images.ImagesService;
+import com.google.appengine.api.images.ImagesServiceFactory;
+import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -43,5 +46,18 @@ public class AppModule extends AbstractModule {
   @Singleton
   FirebaseAuth provideFirebaseAuth(FirebaseApp app) {
     return FirebaseAuth.getInstance(app);
+  }
+
+  @Provides
+  @Singleton
+  GcsService provideGcsService() {
+    return GcsServiceFactory.createGcsService(new RetryParams.Builder().initialRetryDelayMillis(10)
+        .retryMaxAttempts(10).totalRetryPeriodMillis(15000).build());
+  }
+
+  @Provides
+  @Singleton
+  ImagesService provideImagesService() {
+    return ImagesServiceFactory.getImagesService();
   }
 }

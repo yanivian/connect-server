@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
 import javax.inject.Inject;
-import com.google.appengine.api.images.ImagesServiceFactory;
+import com.google.appengine.api.images.ImagesService;
 import com.google.appengine.api.images.ServingUrlOptions;
 import com.google.appengine.tools.cloudstorage.GcsFileOptions;
 import com.google.appengine.tools.cloudstorage.GcsFilename;
@@ -29,10 +29,12 @@ public class BlobDao {
   private static final int READ_PREFETCH_BUFFER_SIZE = 2 * 1024 * 1024; // 2MB
 
   private final GcsService storage;
+  private final ImagesService imagesService;
 
   @Inject
-  BlobDao(GcsService storage) {
+  BlobDao(GcsService storage, ImagesService imagesService) {
     this.storage = storage;
+    this.imagesService = imagesService;
   }
 
   public void createOrReplace(String id, BlobNamespace namespace, InputStream inputStream)
@@ -57,9 +59,9 @@ public class BlobDao {
     return storage.delete(new GcsFilename(namespace.bucketName, id));
   }
 
-  public static String getImageUrl(String imageId) {
+  public String getImageUrl(String imageId) {
     String gcsFilename = String.format("/gs/%s/%s", BlobNamespace.IMAGE, imageId);
-    return ImagesServiceFactory.getImagesService().getServingUrl(
+    return imagesService.getServingUrl(
         ServingUrlOptions.Builder.withGoogleStorageFileName(gcsFilename).secureUrl(true));
   }
 }

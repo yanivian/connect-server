@@ -1,12 +1,12 @@
 package com.yanivian.connect.customer.endpoint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.firebase.auth.FirebaseAuth;

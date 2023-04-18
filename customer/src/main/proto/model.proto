@@ -13,7 +13,8 @@ message Profile {
   int64 CreatedTimestampMillis = 3;
   optional string Name = 4;
   optional string EmailAddress = 5;
-  optional int64 LastUpdatedTimestampMillis = 6;
+  optional Image Image = 6;
+  optional int64 LastUpdatedTimestampMillis = 7;
 }
 
 message Image {

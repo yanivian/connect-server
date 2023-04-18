@@ -36,4 +36,14 @@ public abstract class DatastoreModel<M extends Message, DM extends DatastoreMode
     T property = (T) entity.getProperty(propertyName);
     return entity.hasProperty(propertyName) ? Optional.of(property) : Optional.empty();
   }
+
+  @SuppressWarnings("unchecked")
+  protected <T> DM setOptionalProperty(String propertyName, Optional<T> value) {
+    if (value.isPresent()) {
+      entity.setProperty(propertyName, value.get());
+    } else {
+      entity.removeProperty(propertyName);
+    }
+    return (DM) this;
+  }
 }

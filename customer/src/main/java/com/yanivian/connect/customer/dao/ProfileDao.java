@@ -29,14 +29,14 @@ public final class ProfileDao {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(Entity.KEY_RESERVED_PROPERTY, FilterOperator.EQUAL, toKey(userId)));
     Entity entity = datastore.prepare(query).asSingleEntity();
-    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
+    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity, datastore));
   }
 
   public Optional<ProfileModel> getProfileByPhoneNumber(String phoneNumber) {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
     Entity entity = datastore.prepare(query).asSingleEntity();
-    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
+    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity, datastore));
   }
 
   /**
@@ -47,8 +47,8 @@ public final class ProfileDao {
    */
   public ProfileModel createProfile(Profile profile) {
     Entity entity = new Entity(ProfileModel.KIND, profile.getUserID());
-    ProfileModel model = new ProfileModel(entity).setPhoneNumber(profile.getPhoneNumber())
-        .setCreatedTimestampMillis(clock.millis());
+    ProfileModel model = new ProfileModel(entity, datastore)
+        .setPhoneNumber(profile.getPhoneNumber()).setCreatedTimestampMillis(clock.millis());
     if (profile.hasName()) {
       model.setName(profile.getName());
     }
@@ -58,7 +58,7 @@ public final class ProfileDao {
     return model.save();
   }
 
-  public final class ProfileModel {
+  public final class ProfileModel extends DatastoreModel<Profile, ProfileModel> {
 
     static final String KIND = "Profile";
     private static final String PROPERTY_PHONE_NUMBER = "PhoneNumber";
@@ -68,32 +68,18 @@ public final class ProfileDao {
     private static final String PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS =
         "LastUpdatedTimestampMillis";
 
-    private final Entity entity;
-
-    private ProfileModel(Entity entity) {
-      this.entity = entity;
+    private ProfileModel(Entity entity, DatastoreService datastore) {
+      super(entity, datastore);
     }
 
-    Key getKey() {
-      return entity.getKey();
-    }
-
-    public ProfileModel save() {
-      datastore.put(entity);
-      return this;
-    }
-
+    @Override
     public Profile toProto() {
-      Profile.Builder profile = Profile.newBuilder().setUserID(getUserID())
+      Profile.Builder profile = Profile.newBuilder().setUserID(getID())
           .setPhoneNumber(getPhoneNumber()).setCreatedTimestampMillis(getCreatedTimestampMillis());
       getName().ifPresent(profile::setName);
       getEmailAddress().ifPresent(profile::setEmailAddress);
       getLastUpdatedTimestampMillis().ifPresent(profile::setLastUpdatedTimestampMillis);
       return profile.build();
-    }
-
-    public String getUserID() {
-      return getKey().getName();
     }
 
     public ProfileModel setPhoneNumber(String phoneNumber) {
@@ -139,12 +125,6 @@ public final class ProfileDao {
 
     public Optional<Long> getLastUpdatedTimestampMillis() {
       return getOptionalProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> Optional<T> getOptionalProperty(String propertyName) {
-      return entity.hasProperty(propertyName) ? Optional.of((T) entity.getProperty(propertyName))
-          : Optional.empty();
     }
   }
 

@@ -40,10 +40,8 @@ public class ImageDao {
     blobDao.createOrReplace(id, BlobNamespace.IMAGE, inputStream);
 
     Entity entity = new Entity(ImageModel.KIND, id);
-    return new ImageModel(entity)
-        .setUserID(userID)
-        .setCreatedTimestampMillis(clock.millis())
-        .save();
+    return new ImageModel(entity, datastore).setUserID(userID)
+        .setCreatedTimestampMillis(clock.millis()).save();
   }
 
   /** Fetches image metadata if present. */
@@ -52,7 +50,7 @@ public class ImageDao {
         new Query(ImageModel.KIND).setFilter(new Query.FilterPredicate(Entity.KEY_RESERVED_PROPERTY,
             Query.FilterOperator.EQUAL, toKey(imageID)));
     Entity entity = datastore.prepare(imageQuery).asSingleEntity();
-    return Optional.ofNullable(entity == null ? null : new ImageModel(entity));
+    return Optional.ofNullable(entity == null ? null : new ImageModel(entity, datastore));
   }
 
   /** Irreversably deletes both the image metadata and the image blob. */
@@ -63,37 +61,26 @@ public class ImageDao {
     datastore.delete(toKey(image.getID()));
   }
 
-  public class ImageModel {
+  public class ImageModel extends DatastoreModel<Image, ImageModel> {
 
     static final String KIND = "Image";
     private static final String PROPERTY_USER_ID = "UserID";
     private static final String PROPERTY_CREATED_TIMESTAMP_MILLIS = "CreatedTimestampMillis";
 
-    private final Entity entity;
-
-    private ImageModel(Entity entity) {
-      this.entity = entity;
+    private ImageModel(Entity entity, DatastoreService datastore) {
+      super(entity, datastore);
     }
 
-    Key getKey() {
-      return entity.getKey();
-    }
-
-    String getID() {
-      return getKey().getName();
+    @Override
+    public Image toProto() {
+      Image.Builder image = Image.newBuilder().setID(getID())
+          .setCreatedTimestampMillis(clock.millis()).setURL(getURL());
+      getUserID().ifPresent(image::setUserID);
+      return image.build();
     }
 
     public String getURL() {
       return BlobDao.getImageUrl(getID());
-    }
-
-    public ImageModel setUserID(String userID) {
-      entity.setProperty(PROPERTY_USER_ID, userID);
-      return this;
-    }
-
-    public String getUserID() {
-      return (String) entity.getProperty(PROPERTY_USER_ID);
     }
 
     public ImageModel setCreatedTimestampMillis(long timestampMillis) {
@@ -105,18 +92,13 @@ public class ImageDao {
       return (long) entity.getProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS);
     }
 
-    public ImageModel save() {
-      datastore.put(entity);
+    public ImageModel setUserID(String userID) {
+      entity.setProperty(PROPERTY_USER_ID, userID);
       return this;
     }
 
-    public Image toProto() {
-      return Image.newBuilder()
-          .setID(getID())
-          .setUserID(getUserID())
-          .setCreatedTimestampMillis(clock.millis())
-          .setURL(getURL())
-          .build();
+    public Optional<String> getUserID() {
+      return getOptionalProperty(PROPERTY_USER_ID);
     }
   }
 

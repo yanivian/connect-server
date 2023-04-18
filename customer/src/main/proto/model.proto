@@ -15,3 +15,12 @@ message Profile {
   optional string EmailAddress = 5;
   optional int64 LastUpdatedTimestampMillis = 6;
 }
+
+message Image {
+  string ID = 1;
+  // ID of the user that uploaded and owns the image.
+  string UserID = 2;
+  int64 CreatedTimestampMillis = 3;
+  // URL that can dynamically serve the image blob.
+  string URL = 4;
+}

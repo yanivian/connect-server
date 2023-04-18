@@ -58,13 +58,9 @@ public final class ProfileDao {
     return model.save();
   }
 
-  public static Key toKey(String userId) {
-    return KeyFactory.createKey(ProfileModel.KIND, userId);
-  }
-
   public final class ProfileModel {
 
-    public static final String KIND = "Profile";
+    static final String KIND = "Profile";
     private static final String PROPERTY_PHONE_NUMBER = "PhoneNumber";
     private static final String PROPERTY_CREATED_TIMESTAMP_MILLIS = "CreatedTimestampMillis";
     private static final String PROPERTY_NAME = "Name";
@@ -78,7 +74,7 @@ public final class ProfileDao {
       this.entity = entity;
     }
 
-    public Key getKey() {
+    Key getKey() {
       return entity.getKey();
     }
 
@@ -150,5 +146,9 @@ public final class ProfileDao {
       return entity.hasProperty(propertyName) ? Optional.of((T) entity.getProperty(propertyName))
           : Optional.empty();
     }
+  }
+
+  static Key toKey(String userId) {
+    return KeyFactory.createKey(ProfileModel.KIND, userId);
   }
 }

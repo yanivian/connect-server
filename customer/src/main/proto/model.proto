@@ -18,10 +18,9 @@ message Profile {
 
 message Image {
   string ID = 1;
-  int64 CreatedTimestampMillis = 2;
-  // URL that can dynamically serve the image blob.
-  string URL = 3;
   // ID of the user that uploaded and owns the image.
-  // Not populated when the uploader doesn't have a profile.
-  optional string UserID = 4;
+  string UserID = 2;
+  int64 CreatedTimestampMillis = 3;
+  // URL that can dynamically serve the image blob.
+  string URL = 4;
 }

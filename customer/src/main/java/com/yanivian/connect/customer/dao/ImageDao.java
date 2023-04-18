@@ -34,7 +34,7 @@ public class ImageDao {
    * 
    * @throws IOException
    */
-  public ImageModel createImage(String userID, InputStream inputStream) throws IOException {
+  public ImageModel createImage(InputStream inputStream, String userID) throws IOException {
     String id = UUID.randomUUID().toString();
 
     blobDao.createOrReplace(id, BlobNamespace.IMAGE, inputStream);
@@ -73,14 +73,21 @@ public class ImageDao {
 
     @Override
     public Image toProto() {
-      Image.Builder image = Image.newBuilder().setID(getID())
-          .setCreatedTimestampMillis(clock.millis()).setURL(getURL());
-      getUserID().ifPresent(image::setUserID);
-      return image.build();
+      return Image.newBuilder().setID(getID()).setUserID(getUserID())
+          .setCreatedTimestampMillis(clock.millis()).setURL(getURL()).build();
     }
 
     public String getURL() {
       return BlobDao.getImageUrl(getID());
+    }
+
+    public ImageModel setUserID(String userID) {
+      entity.setProperty(PROPERTY_USER_ID, userID);
+      return this;
+    }
+
+    public String getUserID() {
+      return (String) entity.getProperty(PROPERTY_USER_ID);
     }
 
     public ImageModel setCreatedTimestampMillis(long timestampMillis) {
@@ -90,15 +97,6 @@ public class ImageDao {
 
     public long getCreatedTimestampMillis() {
       return (long) entity.getProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS);
-    }
-
-    public ImageModel setUserID(String userID) {
-      entity.setProperty(PROPERTY_USER_ID, userID);
-      return this;
-    }
-
-    public Optional<String> getUserID() {
-      return getOptionalProperty(PROPERTY_USER_ID);
     }
   }
 

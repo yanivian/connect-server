@@ -16,8 +16,8 @@ ext {
     mockito : 'org.mockito:mockito-all:1.+',
     protobuf : 'com.google.protobuf:protobuf-bom:+',
     servlet_api : [
-      'javax.servlet:javax.servlet-api:3.1.0',
-      'javax.servlet.jsp:javax.servlet.jsp-api:2.3.1',
+      'javax.servlet:javax.servlet-api:+',
+      'javax.servlet.jsp:javax.servlet.jsp-api:+',
     ],
   ]
 

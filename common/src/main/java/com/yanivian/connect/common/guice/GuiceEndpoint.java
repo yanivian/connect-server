@@ -6,20 +6,16 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import com.google.common.base.Preconditions;
 import com.google.inject.Injector;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
-
 import com.yanivian.connect.common.util.TextProtoUtils;
 
 public abstract class GuiceEndpoint extends HttpServlet {
@@ -50,14 +46,15 @@ public abstract class GuiceEndpoint extends HttpServlet {
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws IOException, ServletException {
-    Preconditions.checkState(getClass().isAnnotationPresent(AllowGet.class));
+    Preconditions.checkState(getClass().isAnnotationPresent(AllowGet.class), "GET not supported.");
     process(req, resp);
   }
 
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws IOException, ServletException {
-    Preconditions.checkState(getClass().isAnnotationPresent(AllowPost.class));
+    Preconditions.checkState(getClass().isAnnotationPresent(AllowPost.class),
+        "POST not supported.");
     process(req, resp);
   }
 

@@ -1,4 +1,4 @@
-package com.yanivian.connect.customer.endpoint;
+package com.yanivian.connect.frontend.endpoint;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -11,11 +11,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.customer.dao.ImageDao;
-import com.yanivian.connect.customer.dao.ImageDao.ImageModel;
-import com.yanivian.connect.customer.dao.ProfileDao;
-import com.yanivian.connect.customer.dao.ProfileDao.ProfileModel;
-import com.yanivian.connect.customer.proto.model.Profile;
+import com.yanivian.connect.frontend.dao.ImageDao;
+import com.yanivian.connect.frontend.dao.ImageDao.ImageModel;
+import com.yanivian.connect.frontend.dao.ProfileDao;
+import com.yanivian.connect.frontend.dao.ProfileDao.ProfileModel;
+import com.yanivian.connect.frontend.proto.model.Profile;
 
 @WebServlet(name = "UpdateProfileEndpoint", urlPatterns = {"/profile/update"})
 @AllowPost

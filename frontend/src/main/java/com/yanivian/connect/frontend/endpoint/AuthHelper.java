@@ -1,4 +1,4 @@
-package com.yanivian.connect.customer.endpoint;
+package com.yanivian.connect.frontend.endpoint;
 
 import java.io.IOException;
 import java.util.Optional;

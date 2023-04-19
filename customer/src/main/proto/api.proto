@@ -1,6 +1,0 @@
-syntax = "proto3";
-
-package customer.api;
-
-option java_package = "com.yanivian.connect.customer.proto.api";
-option java_multiple_files = true;

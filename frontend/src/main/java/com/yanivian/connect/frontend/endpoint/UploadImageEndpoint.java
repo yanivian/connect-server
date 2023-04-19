@@ -1,4 +1,4 @@
-package com.yanivian.connect.customer.endpoint;
+package com.yanivian.connect.frontend.endpoint;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -12,8 +12,8 @@ import javax.servlet.http.Part;
 import com.google.common.collect.ImmutableSet;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.customer.dao.ImageDao;
-import com.yanivian.connect.customer.dao.ImageDao.ImageModel;
+import com.yanivian.connect.frontend.dao.ImageDao;
+import com.yanivian.connect.frontend.dao.ImageDao.ImageModel;
 
 @WebServlet(name = "UploadImageEndpoint", urlPatterns = {"/image/upload"})
 @MultipartConfig(maxFileSize = 10 * 1024 * 1024, // 10MB

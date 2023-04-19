@@ -1,4 +1,4 @@
-package com.yanivian.connect.customer.dao;
+package com.yanivian.connect.frontend.dao;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -10,7 +10,7 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
-import com.yanivian.connect.customer.proto.model.Profile;
+import com.yanivian.connect.frontend.proto.model.Profile;
 
 public final class ProfileDao {
 

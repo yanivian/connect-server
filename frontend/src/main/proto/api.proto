@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+package frontend.api;
+
+option java_package = "com.yanivian.connect.frontend.proto.api";
+option java_multiple_files = true;

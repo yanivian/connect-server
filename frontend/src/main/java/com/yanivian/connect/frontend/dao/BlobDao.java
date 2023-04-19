@@ -1,4 +1,4 @@
-package com.yanivian.connect.customer.dao;
+package com.yanivian.connect.frontend.dao;
 
 import java.io.IOException;
 import java.io.InputStream;

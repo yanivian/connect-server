@@ -1,4 +1,4 @@
-package com.yanivian.connect.customer.dao;
+package com.yanivian.connect.frontend.dao;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,8 +13,8 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.common.base.Preconditions;
-import com.yanivian.connect.customer.dao.BlobDao.BlobNamespace;
-import com.yanivian.connect.customer.proto.model.Image;
+import com.yanivian.connect.frontend.dao.BlobDao.BlobNamespace;
+import com.yanivian.connect.frontend.proto.model.Image;
 
 public class ImageDao {
 

@@ -22,11 +22,8 @@ import com.yanivian.connect.customer.proto.model.Profile;
 public final class UpdateProfileEndpoint extends GuiceEndpoint {
 
   private static final String PARAM_NAME = "name";
-  private static final String PARAM_CLEAR_NAME = "clearName";
   private static final String PARAM_EMAIL_ADDRESS = "emailAddress";
-  private static final String PARAM_CLEAR_EMAIL_ADDRESS = "clearEmailAddress";
   private static final String PARAM_IMAGE = "image";
-  private static final String PARAM_CLEAR_IMAGE = "clearImage";
 
   @Inject
   private AuthHelper authHelper;
@@ -51,30 +48,16 @@ public final class UpdateProfileEndpoint extends GuiceEndpoint {
     }
     ProfileModel profileModel = optionalProfileModel.get();
 
-    Optional<String> name = getOptionalParameter(req, PARAM_NAME);
-    Optional<String> clearName = getOptionalParameter(req, PARAM_CLEAR_NAME);
-    if (name.isPresent() || clearName.isPresent()) {
-      profileModel.setName(clearName.isPresent() ? Optional.empty() : name);
-    }
-
-    Optional<String> emailAddress = getOptionalParameter(req, PARAM_EMAIL_ADDRESS);
-    Optional<String> clearEmailAddress = getOptionalParameter(req, PARAM_CLEAR_EMAIL_ADDRESS);
-    if (emailAddress.isPresent() || clearEmailAddress.isPresent()) {
-      profileModel.setEmailAddress(clearEmailAddress.isPresent() ? Optional.empty() : emailAddress);
-    }
+    profileModel.setName(getOptionalParameter(req, PARAM_NAME));
+    profileModel.setEmailAddress(getOptionalParameter(req, PARAM_EMAIL_ADDRESS));
 
     Optional<String> image = getOptionalParameter(req, PARAM_IMAGE);
-    Optional<String> clearImage = getOptionalParameter(req, PARAM_CLEAR_IMAGE);
-    Optional<ImageModel> imageModel = Optional.empty();
-    if (image.isPresent()) {
-      imageModel = imageDao.getImage(image.get());
-      Preconditions.checkState(
-          imageModel.isPresent() && Objects.equal(userID.get(), imageModel.get().getUserID()),
-          "Bad image: " + image.get());
-      profileModel.setName(clearImage.isPresent() ? Optional.empty() : image);
-    } else if (clearImage.isPresent()) {
-      profileModel.setImage(Optional.empty());
-    }
+    Optional<ImageModel> imageModel = image.flatMap(imageDao::getImage);
+    Preconditions.checkState(
+        !image.isPresent()
+            || imageModel.isPresent() && Objects.equal(userID.get(), imageModel.get().getUserID()),
+        "Bad image: " + image.get());
+    profileModel.setImage(image);
 
     profileModel.save();
 
@@ -82,6 +65,7 @@ public final class UpdateProfileEndpoint extends GuiceEndpoint {
     if (imageModel.isPresent()) {
       profile = profile.toBuilder().setImage(imageModel.get().toProto()).build();
     }
+
     writeJsonResponse(resp, profile);
   }
 

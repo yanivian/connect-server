@@ -53,7 +53,7 @@ public final class GetOrCreateProfileEndpoint extends GuiceEndpoint {
   private String getPhoneNumberOrFail(HttpServletRequest req) {
     String phoneNumber = req.getParameter(PARAM_PHONE_NUMBER);
     Preconditions.checkArgument(!Strings.isNullOrEmpty(phoneNumber),
-        "Missing parameter " + PARAM_PHONE_NUMBER);
+        "Missing parameter: " + PARAM_PHONE_NUMBER);
     return phoneNumber;
   }
 }

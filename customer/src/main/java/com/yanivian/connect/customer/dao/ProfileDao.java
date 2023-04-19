@@ -23,9 +23,9 @@ public final class ProfileDao {
     this.clock = clock;
   }
 
-  public Optional<ProfileModel> getProfileByUserId(String userId) {
+  public Optional<ProfileModel> getProfileByUserId(String userID) {
     Query query = new Query(ProfileModel.KIND).setFilter(
-        new FilterPredicate(Entity.KEY_RESERVED_PROPERTY, FilterOperator.EQUAL, toKey(userId)));
+        new FilterPredicate(Entity.KEY_RESERVED_PROPERTY, FilterOperator.EQUAL, toKey(userID)));
     Entity entity = datastore.prepare(query).asSingleEntity();
     return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity, datastore));
   }

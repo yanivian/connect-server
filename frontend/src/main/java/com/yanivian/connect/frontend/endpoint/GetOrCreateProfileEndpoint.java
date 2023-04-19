@@ -38,8 +38,10 @@ public final class GetOrCreateProfileEndpoint extends GuiceEndpoint {
       return;
     }
 
-    ProfileModel profileModel = profileDao.getProfileByUserId(userID.get())
-        .orElse(profileDao.createProfile(userID.get(), getPhoneNumberOrFail(req)));
+    String phoneNumber = req.getParameter(PARAM_PHONE_NUMBER);
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(phoneNumber),
+        "Missing parameter: " + PARAM_PHONE_NUMBER);
+    ProfileModel profileModel = getOrCreateProfile(userID.get(), phoneNumber);
     Profile profile = profileModel.toProto();
 
     Optional<ImageModel> imageModel = profileModel.getImage().flatMap(imageDao::getImage);
@@ -50,10 +52,13 @@ public final class GetOrCreateProfileEndpoint extends GuiceEndpoint {
     writeJsonResponse(resp, profile);
   }
 
-  private String getPhoneNumberOrFail(HttpServletRequest req) {
-    String phoneNumber = req.getParameter(PARAM_PHONE_NUMBER);
-    Preconditions.checkArgument(!Strings.isNullOrEmpty(phoneNumber),
-        "Missing parameter: " + PARAM_PHONE_NUMBER);
-    return phoneNumber;
+  private ProfileModel getOrCreateProfile(String userID, String phoneNumber) {
+    Optional<ProfileModel> profileModel = profileDao.getProfileByUserId(userID);
+    if (profileModel.isPresent()) {
+      logger.atError().log("Found profile.");
+      return profileModel.get();
+    }
+    logger.atError().log("Creating and potentially replacing profile.");
+    return profileDao.createProfile(userID, phoneNumber);
   }
 }

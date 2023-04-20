@@ -56,7 +56,7 @@ public final class UpdateProfileEndpoint extends GuiceEndpoint {
     Preconditions.checkState(
         !image.isPresent()
             || imageModel.isPresent() && Objects.equal(userID.get(), imageModel.get().getUserID()),
-        "Bad image in request");
+        "Bad image in request: " + image.get());
     profileModel.setImage(image);
 
     profileModel.save();

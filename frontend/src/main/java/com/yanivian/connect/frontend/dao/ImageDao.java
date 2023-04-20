@@ -60,7 +60,7 @@ public class ImageDao {
   public void deleteImage(ImageModel image, String actorID) throws IOException {
     Preconditions.checkState(Objects.equals(actorID, image.getUserID()));
     // TODO: Handle failure scenarios.
-    blobDao.delete(image.getID(), BlobNamespace.IMAGE);
+    blobDao.delete(image.getID(), IMAGES);
     datastore.delete(toKey(image.getID()));
   }
 

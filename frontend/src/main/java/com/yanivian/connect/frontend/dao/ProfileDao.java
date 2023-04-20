@@ -116,7 +116,7 @@ public final class ProfileDao {
 
     public ProfileModel setImage(Optional<String> image) {
       if (image.isPresent()) {
-        entity.setProperty(PROPERTY_IMAGE, image);
+        entity.setProperty(PROPERTY_IMAGE, image.get());
       } else {
         entity.removeProperty(PROPERTY_IMAGE);
       }

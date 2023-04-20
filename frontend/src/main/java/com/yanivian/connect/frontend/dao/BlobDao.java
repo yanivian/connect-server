@@ -59,8 +59,8 @@ public class BlobDao {
     return storage.delete(new GcsFilename(namespace.bucketName, id));
   }
 
-  public String getImageUrl(String imageId) {
-    String gcsFilename = String.format("/gs/%s/%s", BlobNamespace.IMAGE.bucketName, imageId);
+  public String getImageUrl(String imageId, BlobNamespace blobNamespace) {
+    String gcsFilename = String.format("/gs/%s/%s", blobNamespace.bucketName, imageId);
     return imagesService.getServingUrl(
         ServingUrlOptions.Builder.withGoogleStorageFileName(gcsFilename).secureUrl(true));
   }

@@ -18,6 +18,8 @@ import com.yanivian.connect.frontend.proto.model.Image;
 
 public class ImageDao {
 
+  private static final BlobNamespace IMAGES = BlobNamespace.IMAGE;
+
   private final DatastoreService datastore;
   private final BlobDao blobDao;
   private final Clock clock;
@@ -37,11 +39,12 @@ public class ImageDao {
   public ImageModel createImage(InputStream inputStream, String userID) throws IOException {
     String id = UUID.randomUUID().toString();
 
-    blobDao.createOrReplace(id, BlobNamespace.IMAGE, inputStream);
+    blobDao.createOrReplace(id, IMAGES, inputStream);
+    String url = blobDao.getImageUrl(id, IMAGES);
 
     Entity entity = new Entity(ImageModel.KIND, id);
     return new ImageModel(entity, datastore).setUserID(userID)
-        .setCreatedTimestampMillis(clock.millis()).save();
+        .setCreatedTimestampMillis(clock.millis()).setURL(url).save();
   }
 
   /** Fetches image metadata if present. */
@@ -66,6 +69,7 @@ public class ImageDao {
     static final String KIND = "Image";
     private static final String PROPERTY_USER_ID = "UserID";
     private static final String PROPERTY_CREATED_TIMESTAMP_MILLIS = "CreatedTimestampMillis";
+    private static final String PROPERTY_URL = "URL";
 
     private ImageModel(Entity entity, DatastoreService datastore) {
       super(entity, datastore);
@@ -78,25 +82,30 @@ public class ImageDao {
     }
 
     public String getURL() {
-      return blobDao.getImageUrl(getID());
-    }
-
-    public ImageModel setUserID(String userID) {
-      entity.setProperty(PROPERTY_USER_ID, userID);
-      return this;
+      return (String) entity.getProperty(PROPERTY_URL);
     }
 
     public String getUserID() {
       return (String) entity.getProperty(PROPERTY_USER_ID);
     }
 
-    public ImageModel setCreatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS, timestampMillis);
+    public long getCreatedTimestampMillis() {
+      return (long) entity.getProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS);
+    }
+
+    private ImageModel setURL(String url) {
+      entity.setProperty(PROPERTY_URL, url);
       return this;
     }
 
-    public long getCreatedTimestampMillis() {
-      return (long) entity.getProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS);
+    private ImageModel setUserID(String userID) {
+      entity.setProperty(PROPERTY_USER_ID, userID);
+      return this;
+    }
+
+    private ImageModel setCreatedTimestampMillis(long timestampMillis) {
+      entity.setProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS, timestampMillis);
+      return this;
     }
   }
 

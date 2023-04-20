@@ -52,12 +52,15 @@ public final class UpdateProfileEndpoint extends GuiceEndpoint {
     profileModel.setEmailAddress(getOptionalParameter(req, PARAM_EMAIL_ADDRESS));
 
     Optional<String> image = getOptionalParameter(req, PARAM_IMAGE);
-    Optional<ImageModel> imageModel = image.flatMap(imageDao::getImage);
-    Preconditions.checkState(
-        !image.isPresent()
-            || imageModel.isPresent() && Objects.equal(userID.get(), imageModel.get().getUserID()),
-        "Bad image in request: " + image.get());
     profileModel.setImage(image);
+
+    Optional<ImageModel> imageModel = Optional.empty();
+    if (image.isPresent()) {
+      imageModel = imageDao.getImage(image.get());
+      Preconditions.checkState(
+          imageModel.isPresent() && Objects.equal(userID.get(), imageModel.get().getUserID()),
+          "Bad image in request: " + image.get());
+    }
 
     profileModel.save();
 

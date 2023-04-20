@@ -60,7 +60,7 @@ public class BlobDao {
   }
 
   public String getImageUrl(String imageId) {
-    String gcsFilename = String.format("/gs/%s/%s", BlobNamespace.IMAGE, imageId);
+    String gcsFilename = String.format("/gs/%s/%s", BlobNamespace.IMAGE.bucketName, imageId);
     return imagesService.getServingUrl(
         ServingUrlOptions.Builder.withGoogleStorageFileName(gcsFilename).secureUrl(true));
   }

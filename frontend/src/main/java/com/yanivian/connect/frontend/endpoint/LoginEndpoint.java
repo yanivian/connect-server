@@ -14,13 +14,27 @@ import com.yanivian.connect.frontend.dao.ImageDao;
 import com.yanivian.connect.frontend.dao.ImageDao.ImageModel;
 import com.yanivian.connect.frontend.dao.ProfileDao;
 import com.yanivian.connect.frontend.dao.ProfileDao.ProfileModel;
+import com.yanivian.connect.frontend.proto.api.LoginContext;
 import com.yanivian.connect.frontend.proto.model.Profile;
 
-@WebServlet(name = "GetOrCreateProfileEndpoint", urlPatterns = {"/profile/getorcreate"})
+/**
+ * Provides {@link LoginContext} to clients. This includes the following:
+ * <ul>
+ * <li>Get user profile,creating an empty profile if needed.</li>
+ * <li>>Get any credentials needed by the client.</li>
+ * </ul>
+ */
+@WebServlet(name = "LoginEndpoint", urlPatterns = {"/user/login"})
 @AllowPost
-public final class GetOrCreateProfileEndpoint extends GuiceEndpoint {
+public final class LoginEndpoint extends GuiceEndpoint {
 
   private static final String PARAM_PHONE_NUMBER = "phoneNumber";
+  private static final String PARAM_CLIENT = "client";
+
+  /** Enumeration of supported clients. */
+  enum Client {
+    ANDROID, IOS, WEB;
+  }
 
   @Inject
   private AuthHelper authHelper;
@@ -29,7 +43,7 @@ public final class GetOrCreateProfileEndpoint extends GuiceEndpoint {
   @Inject
   private ImageDao imageDao;
 
-  public GetOrCreateProfileEndpoint() {}
+  public LoginEndpoint() {}
 
   @Override
   protected void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -38,9 +52,20 @@ public final class GetOrCreateProfileEndpoint extends GuiceEndpoint {
       return;
     }
 
+    Client client = Client.valueOf(req.getParameter(PARAM_CLIENT));
+    LoginContext.Builder loginContext = LoginContext.newBuilder();
+    loginContext.getCredentialsBuilder().setGoogleCloudApiKey(getGoogleCloudApiKey(client));
+
     String phoneNumber = req.getParameter(PARAM_PHONE_NUMBER);
     Preconditions.checkArgument(!Strings.isNullOrEmpty(phoneNumber),
         "Missing parameter: " + PARAM_PHONE_NUMBER);
+    Profile profile = getOrCreateProfile(phoneNumber, userID);
+    loginContext.setProfile(profile);
+
+    writeJsonResponse(resp, loginContext.build());
+  }
+
+  private Profile getOrCreateProfile(String phoneNumber, Optional<String> userID) {
     ProfileModel profileModel = getOrCreateProfile(userID.get(), phoneNumber);
     Profile profile = profileModel.toProto();
 
@@ -48,8 +73,7 @@ public final class GetOrCreateProfileEndpoint extends GuiceEndpoint {
     if (imageModel.isPresent()) {
       profile = profile.toBuilder().setImage(imageModel.get().toProto()).build();
     }
-
-    writeJsonResponse(resp, profile);
+    return profile;
   }
 
   private ProfileModel getOrCreateProfile(String userID, String phoneNumber) {
@@ -60,5 +84,18 @@ public final class GetOrCreateProfileEndpoint extends GuiceEndpoint {
     }
     logger.atError().log("Creating and potentially replacing profile.");
     return profileDao.createProfile(userID, phoneNumber);
+  }
+
+  private static String getGoogleCloudApiKey(Client client) {
+    switch (client) {
+      case ANDROID:
+        return "AIzaSyBA4xAfhAB0z4g4Es9q0na9H40XdiybohM";
+      case IOS:
+        return "AIzaSyDGJzblLeJUEs3N0XO9vkonIkmDoX4zdXw";
+      case WEB:
+        return "AIzaSyCFw0FVQvic4xrScJufvcG4pHw-Yddxk1I";
+      default:
+        throw new IllegalStateException("Unsupported client: " + client);
+    }
   }
 }

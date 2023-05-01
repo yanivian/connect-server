@@ -2,5 +2,18 @@ syntax = "proto3";
 
 package frontend.api;
 
+import "model.proto";
+
 option java_package = "com.yanivian.connect.frontend.proto.api";
 option java_multiple_files = true;
+
+message LoginContext {
+  // Whether this is the user's first login.
+  bool IsFirstLogin = 1;
+  .frontend.model.Profile Profile = 2;
+
+  message CredentialsContainer {
+    string GoogleCloudApiKey = 1;
+  }
+  CredentialsContainer Credentials = 3;
+}

@@ -54,7 +54,8 @@ public final class LoginEndpoint extends GuiceEndpoint {
 
     Client client = Client.valueOf(req.getParameter(PARAM_CLIENT));
     LoginContext.Builder loginContext = LoginContext.newBuilder();
-    loginContext.getCredentialsBuilder().setGoogleCloudApiKey(getGoogleCloudApiKey(client));
+    loginContext.getCredentialsBuilder().setGoogleCloudApiKey(getGoogleCloudApiKey(client))
+        .setOpenAIApiKey("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");
 
     String phoneNumber = req.getParameter(PARAM_PHONE_NUMBER);
     Preconditions.checkArgument(!Strings.isNullOrEmpty(phoneNumber),

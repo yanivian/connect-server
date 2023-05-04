@@ -14,6 +14,7 @@ message LoginContext {
 
   message CredentialsContainer {
     string GoogleCloudApiKey = 1;
+    string OpenAIApiKey = 2;
   }
   CredentialsContainer Credentials = 3;
 }

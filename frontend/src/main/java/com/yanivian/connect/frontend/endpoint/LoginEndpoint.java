@@ -29,12 +29,6 @@ import com.yanivian.connect.frontend.proto.model.Profile;
 public final class LoginEndpoint extends GuiceEndpoint {
 
   private static final String PARAM_PHONE_NUMBER = "phoneNumber";
-  private static final String PARAM_CLIENT = "client";
-
-  /** Enumeration of supported clients. */
-  enum Client {
-    ANDROID, IOS, WEB;
-  }
 
   @Inject
   private AuthHelper authHelper;
@@ -52,9 +46,9 @@ public final class LoginEndpoint extends GuiceEndpoint {
       return;
     }
 
-    Client client = Client.valueOf(req.getParameter(PARAM_CLIENT));
     LoginContext.Builder loginContext = LoginContext.newBuilder();
-    loginContext.getCredentialsBuilder().setGoogleCloudApiKey(getGoogleCloudApiKey(client))
+    loginContext.getCredentialsBuilder()
+        .setGoogleCloudApiKey("AIzaSyCJDWjyam35lSTHQD0Odg7fughH_VAa9qk")
         .setOpenAIApiKey("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");
 
     String phoneNumber = req.getParameter(PARAM_PHONE_NUMBER);
@@ -85,18 +79,5 @@ public final class LoginEndpoint extends GuiceEndpoint {
     }
     logger.atError().log("Creating and potentially replacing profile.");
     return profileDao.createProfile(userID, phoneNumber);
-  }
-
-  private static String getGoogleCloudApiKey(Client client) {
-    switch (client) {
-      case ANDROID:
-        return "AIzaSyBA4xAfhAB0z4g4Es9q0na9H40XdiybohM";
-      case IOS:
-        return "AIzaSyDGJzblLeJUEs3N0XO9vkonIkmDoX4zdXw";
-      case WEB:
-        return "AIzaSyCFw0FVQvic4xrScJufvcG4pHw-Yddxk1I";
-      default:
-        throw new IllegalStateException("Unsupported client: " + client);
-    }
   }
 }

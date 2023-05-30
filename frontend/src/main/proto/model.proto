@@ -24,7 +24,7 @@ message Image {
   string URL = 4;
 }
 
-// An invitation from a user to their contact.
+// An user's device contact that has been invited by their phone number.
 message Contact {
   string ID = 1;
   // ID of the user that owns and sends out the invite.

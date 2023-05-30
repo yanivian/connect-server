@@ -23,3 +23,27 @@ message Image {
   // URL that can dynamically serve the image blob.
   string URL = 4;
 }
+
+// An invitation from a user to their contact.
+message Contact {
+  string ID = 1;
+  // ID of the user that owns and sends out the invite.
+  string OwnerUserID = 2;
+  int64 CreatedTimestampMillis = 3;
+  string Name = 4;
+  string PhoneNumber = 5;
+}
+
+// An uni-directional connection from the connection owner and a target user.
+message Connection {
+  string ID = 1;
+  // ID of the user that owns the connection.
+  string UserID = 2;
+  // ID of the user that is the target of this connection.
+  string TargetUserID = 3;
+  // Enumeration of the types of connections.
+  enum ConnectionType {
+    UNDEFINED = 0;
+    CONTACT = 1;
+  }
+}

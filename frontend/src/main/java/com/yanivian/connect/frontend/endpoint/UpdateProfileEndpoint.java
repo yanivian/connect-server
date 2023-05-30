@@ -62,7 +62,7 @@ public final class UpdateProfileEndpoint extends GuiceEndpoint {
           "Bad image in request: " + image.get());
     }
 
-    profileModel.save();
+    profileDao.save(profileModel);
 
     Profile profile = profileModel.toProto();
     if (imageModel.isPresent()) {

@@ -16,7 +16,7 @@ import com.google.common.base.Preconditions;
 import com.yanivian.connect.frontend.dao.BlobDao.BlobNamespace;
 import com.yanivian.connect.frontend.proto.model.Image;
 
-public class ImageDao {
+public final class ImageDao {
 
   private static final BlobNamespace IMAGES = BlobNamespace.IMAGE;
 
@@ -43,8 +43,8 @@ public class ImageDao {
     String url = blobDao.getImageUrl(id, IMAGES);
 
     Entity entity = new Entity(ImageModel.KIND, id);
-    return new ImageModel(entity, datastore).setUserID(userID)
-        .setCreatedTimestampMillis(clock.millis()).setURL(url).save();
+    return new ImageModel(entity).setUserID(userID).setCreatedTimestampMillis(clock.millis())
+        .setURL(url).save(datastore);
   }
 
   /** Fetches image metadata if present. */
@@ -53,7 +53,7 @@ public class ImageDao {
         new Query(ImageModel.KIND).setFilter(new Query.FilterPredicate(Entity.KEY_RESERVED_PROPERTY,
             Query.FilterOperator.EQUAL, toKey(imageID)));
     Entity entity = datastore.prepare(imageQuery).asSingleEntity();
-    return Optional.ofNullable(entity == null ? null : new ImageModel(entity, datastore));
+    return Optional.ofNullable(entity == null ? null : new ImageModel(entity));
   }
 
   /** Irreversably deletes both the image metadata and the image blob. */
@@ -64,21 +64,21 @@ public class ImageDao {
     datastore.delete(toKey(image.getID()));
   }
 
-  public class ImageModel extends DatastoreModel<Image, ImageModel> {
+  public static class ImageModel extends DatastoreModel<Image, ImageModel> {
 
     static final String KIND = "Image";
     private static final String PROPERTY_USER_ID = "UserID";
     private static final String PROPERTY_CREATED_TIMESTAMP_MILLIS = "CreatedTimestampMillis";
     private static final String PROPERTY_URL = "URL";
 
-    private ImageModel(Entity entity, DatastoreService datastore) {
-      super(entity, datastore);
+    private ImageModel(Entity entity) {
+      super(entity);
     }
 
     @Override
     public Image toProto() {
       return Image.newBuilder().setID(getID()).setUserID(getUserID())
-          .setCreatedTimestampMillis(clock.millis()).setURL(getURL()).build();
+          .setCreatedTimestampMillis(getCreatedTimestampMillis()).setURL(getURL()).build();
     }
 
     public String getURL() {

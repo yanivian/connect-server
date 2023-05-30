@@ -27,24 +27,28 @@ public final class ProfileDao {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(Entity.KEY_RESERVED_PROPERTY, FilterOperator.EQUAL, toKey(userID)));
     Entity entity = datastore.prepare(query).asSingleEntity();
-    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity, datastore));
+    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
   }
 
   public Optional<ProfileModel> getProfileByPhoneNumber(String phoneNumber) {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
     Entity entity = datastore.prepare(query).asSingleEntity();
-    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity, datastore));
+    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
   }
 
   /** Creates, saves and returns a new profile. */
   public ProfileModel createProfile(String userID, String phoneNumber) {
     Entity entity = new Entity(ProfileModel.KIND, userID);
-    return new ProfileModel(entity, datastore).setPhoneNumber(phoneNumber)
-        .setCreatedTimestampMillis(clock.millis()).save();
+    return new ProfileModel(entity).setPhoneNumber(phoneNumber)
+        .setCreatedTimestampMillis(clock.millis()).save(datastore);
   }
 
-  public final class ProfileModel extends DatastoreModel<Profile, ProfileModel> {
+  public void save(ProfileModel profile) {
+    profile.save(datastore);
+  }
+
+  public static final class ProfileModel extends DatastoreModel<Profile, ProfileModel> {
 
     static final String KIND = "Profile";
     private static final String PROPERTY_PHONE_NUMBER = "PhoneNumber";
@@ -55,8 +59,8 @@ public final class ProfileDao {
         "LastUpdatedTimestampMillis";
     private static final String PROPERTY_IMAGE = "Image";
 
-    private ProfileModel(Entity entity, DatastoreService datastore) {
-      super(entity, datastore);
+    private ProfileModel(Entity entity) {
+      super(entity);
     }
 
     @Override

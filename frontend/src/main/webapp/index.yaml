@@ -1,0 +1,6 @@
+indexes:
+
+- kind: Contact
+  properties:
+  - name: OwnerUserID
+  - name: PhoneNumber

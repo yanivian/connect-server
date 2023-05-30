@@ -2,6 +2,7 @@ package com.yanivian.connect.frontend.dao;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.OptionalLong;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
@@ -136,8 +137,9 @@ public final class ProfileDao {
       return this;
     }
 
-    public Optional<Long> getLastUpdatedTimestampMillis() {
-      return getOptionalProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS);
+    public OptionalLong getLastUpdatedTimestampMillis() {
+      Optional<Long> value = getOptionalProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS);
+      return value.isPresent() ? OptionalLong.of(value.get()) : OptionalLong.empty();
     }
   }
 

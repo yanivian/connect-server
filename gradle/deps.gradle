@@ -2,8 +2,8 @@ ext {
 
   libs = [
     appengine : [
-      'com.google.appengine:appengine-api-1.0-sdk:+',
-      'com.google.appengine.tools:appengine-gcs-client:+'
+      'com.google.appengine:appengine:+',
+      'com.google.appengine.tools:appengine-gcs-client:+',
     ],
     endpoints : [
       'com.google.endpoints:endpoints-framework:+',

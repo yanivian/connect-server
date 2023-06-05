@@ -98,9 +98,11 @@ public final class ContactDao {
 
     @Override
     public Contact toProto() {
-      return Contact.newBuilder().setID(getID()).setOwnerUserID(getOwnerUserID())
+      Contact.Builder contact = Contact.newBuilder().setID(getID()).setOwnerUserID(getOwnerUserID())
           .setCreatedTimestampMillis(getCreatedTimestampMillis()).setName(getName())
-          .setPhoneNumber((getPhoneNumber())).build();
+          .setPhoneNumber((getPhoneNumber()));
+      getLastUpdatedTimestampMillis().ifPresent(contact::setLastUpdatedTimestampMillis);
+      return contact.build();
     }
 
     public String getOwnerUserID() {

@@ -32,6 +32,7 @@ message Contact {
   int64 CreatedTimestampMillis = 3;
   string Name = 4;
   string PhoneNumber = 5;
+  optional int64 LastUpdatedTimestampMillis = 6;
 }
 
 // An uni-directional connection from the connection owner and a target user.

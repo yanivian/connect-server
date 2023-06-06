@@ -12,7 +12,9 @@ public final class DatastoreUtil {
   public static <T> T newTransaction(DatastoreService datastore, Function<Transaction, T> logic) {
     Transaction txn = datastore.beginTransaction();
     try {
-      return logic.apply(txn);
+      T result = logic.apply(txn);
+      txn.commit();
+      return result;
     } finally {
       if (txn.isActive()) {
         txn.rollback();

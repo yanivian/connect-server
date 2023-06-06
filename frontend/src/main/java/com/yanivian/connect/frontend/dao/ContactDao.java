@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
@@ -32,28 +33,42 @@ public final class ContactDao {
 
   /** Creates or updates a contact transactionally. */
   public ContactModel createOrUpdateContact(String ownerUserID, String phoneNumber, String name) {
+    Optional<Key> contactKey = findContact(ownerUserID, phoneNumber).map(ContactModel::getKey);
     return DatastoreUtil.newTransaction(datastore, txn -> {
-      // Re-use an existing entity if possible.
-      Query.Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND,
-          ImmutableList.of(
-              new Query.FilterPredicate(ContactModel.PROPERTY_OWNER_USER_ID,
-                  Query.FilterOperator.EQUAL, ownerUserID),
-              new Query.FilterPredicate(ContactModel.PROPERTY_PHONE_NUMBER,
-                  Query.FilterOperator.EQUAL, phoneNumber)));
-      Entity entity =
-          datastore.prepare(txn, new Query(ContactModel.KIND).setFilter(filter)).asSingleEntity();
-      if (entity != null) {
+      Optional<ContactModel> contactModel = contactKey.flatMap(key -> getContact(txn, key));
+      if (contactModel.isPresent()) {
         // Update the existing contact.
-        ContactModel contactModel = new ContactModel(entity);
-        return contactModel.setName(name).setLastUpdatedTimestampMillis(clock.millis()).save(txn,
-            datastore);
+        return contactModel.get().setName(name).setLastUpdatedTimestampMillis(clock.millis())
+            .save(txn, datastore);
       }
       // Create a new contact.
-      entity = new Entity(ContactModel.KIND, UUID.randomUUID().toString());
+      Entity entity = new Entity(ContactModel.KIND, UUID.randomUUID().toString());
       return new ContactModel(entity).setOwnerUserID(ownerUserID)
           .setCreatedTimestampMillis(clock.millis()).setName(name).setPhoneNumber(phoneNumber)
           .save(txn, datastore);
     });
+  }
+
+  // Cannot be transactional.
+  private Optional<ContactModel> findContact(String ownerUserID, String phoneNumber) {
+    Query.Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND,
+        ImmutableList.of(
+            new Query.FilterPredicate(ContactModel.PROPERTY_OWNER_USER_ID,
+                Query.FilterOperator.EQUAL, ownerUserID),
+            new Query.FilterPredicate(ContactModel.PROPERTY_PHONE_NUMBER,
+                Query.FilterOperator.EQUAL, phoneNumber)));
+    Entity entity =
+        datastore.prepare(new Query(ContactModel.KIND).setFilter(filter)).asSingleEntity();
+    return (entity == null) ? Optional.empty() : Optional.of(new ContactModel(entity));
+  }
+
+  private Optional<ContactModel> getContact(Transaction txn, Key key) {
+    try {
+      Entity entity = datastore.get(txn, key);
+      return Optional.of(new ContactModel(entity));
+    } catch (EntityNotFoundException enfe) {
+      return Optional.empty();
+    }
   }
 
   /**
@@ -64,33 +79,33 @@ public final class ContactDao {
   public boolean deleteContact(String contactID, String actorID) {
     return DatastoreUtil.newTransaction(datastore, txn -> {
       // Fetch the contact.
-      Query query = new Query(ContactModel.KIND).setFilter(new Query.FilterPredicate(
-          Entity.KEY_RESERVED_PROPERTY, Query.FilterOperator.EQUAL, toKey(contactID)));
-      Entity entity = datastore.prepare(query).asSingleEntity();
-      if (entity == null) {
+      Key key = toKey(contactID);
+      Optional<ContactModel> optionalContactModel = getContact(txn, key);
+      if (!optionalContactModel.isPresent()) {
         return false;
       }
-      ContactModel contactModel = new ContactModel(entity);
+      ContactModel contactModel = optionalContactModel.get();
       Preconditions.checkState(contactModel.getOwnerUserID().equals(actorID));
-      datastore.delete(txn, toKey(contactID));
+      datastore.delete(txn, key);
       return true;
     });
   }
 
   /** Fetches all contacts owned by a given user. */
-  public ImmutableList<ContactModel> listContactsOwnedBy(Transaction txn, String ownerUserID) {
+  // Cannot be transactional.
+  public ImmutableList<ContactModel> listContactsOwnedBy(String ownerUserID) {
     Query query = new Query(ContactModel.KIND).setFilter(new FilterPredicate(
         ContactModel.PROPERTY_OWNER_USER_ID, FilterOperator.EQUAL, ownerUserID));
-    return Streams.stream(datastore.prepare(txn, query).asIterable()).map(ContactModel::new)
+    return Streams.stream(datastore.prepare(query).asIterable()).map(ContactModel::new)
         .collect(ImmutableList.toImmutableList());
   }
 
   /** Fetches all contacts that reference a given phone number. */
-  public ImmutableList<ContactModel> listContactsTargetingPhoneNumber(Transaction txn,
-      String phoneNumber) {
+  // Cannot be transactional.
+  public ImmutableList<ContactModel> listContactsTargetingPhoneNumber(String phoneNumber) {
     Query query = new Query(ContactModel.KIND).setFilter(
         new FilterPredicate(ContactModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
-    return Streams.stream(datastore.prepare(txn, query).asIterable()).map(ContactModel::new)
+    return Streams.stream(datastore.prepare(query).asIterable()).map(ContactModel::new)
         .collect(ImmutableList.toImmutableList());
   }
 

@@ -3,6 +3,7 @@ package com.yanivian.connect.frontend.dao;
 import java.util.Optional;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.protobuf.Message;
 
@@ -26,6 +27,11 @@ public abstract class DatastoreModel<M extends Message, DM extends DatastoreMode
   final DM save(Transaction txn, DatastoreService datastore) {
     datastore.put(txn, entity);
     return (DM) this;
+  }
+
+  /** Returns the entity key. */
+  final Key getKey() {
+    return entity.getKey();
   }
 
   /** Returns the name associated with the entity key. */

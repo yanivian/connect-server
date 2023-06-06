@@ -24,7 +24,7 @@ message Connection {
     CONNECTED = 3;
   }
   // The state of the connection.
-  ConnectionState state = 4;
+  ConnectionState State = 4;
 
   int64 CreatedTimestampMillis = 5;
   optional int64 LastUpdatedTimestampMillis = 6;

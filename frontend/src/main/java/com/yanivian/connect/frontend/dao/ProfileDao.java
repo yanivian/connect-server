@@ -6,12 +6,14 @@ import java.util.OptionalLong;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.appengine.api.datastore.Transaction;
+import com.google.common.collect.ImmutableSet;
 import com.yanivian.connect.frontend.proto.model.Profile;
 
 public final class ProfileDao {
@@ -26,16 +28,18 @@ public final class ProfileDao {
   }
 
   public Optional<ProfileModel> getProfileByUserId(Transaction txn, String userID) {
-    Query query = new Query(ProfileModel.KIND).setFilter(
-        new FilterPredicate(Entity.KEY_RESERVED_PROPERTY, FilterOperator.EQUAL, toKey(userID)));
-    Entity entity = datastore.prepare(txn, query).asSingleEntity();
-    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
+    try {
+      Entity entity = datastore.get(txn, toKey(userID));
+      return Optional.of(new ProfileModel(entity));
+    } catch (EntityNotFoundException enfe) {
+      return Optional.empty();
+    }
   }
 
-  public Optional<ProfileModel> getProfileByPhoneNumber(Transaction txn, String phoneNumber) {
+  public Optional<ProfileModel> getProfileByPhoneNumber(ImmutableSet<String> phoneNumbers) {
     Query query = new Query(ProfileModel.KIND).setFilter(
-        new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
-    Entity entity = datastore.prepare(txn, query).asSingleEntity();
+        new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.IN, phoneNumbers));
+    Entity entity = datastore.prepare(query).asSingleEntity();
     return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
   }
 

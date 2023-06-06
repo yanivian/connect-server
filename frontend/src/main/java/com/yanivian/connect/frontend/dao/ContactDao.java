@@ -37,9 +37,9 @@ public final class ContactDao {
       Query.Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND,
           ImmutableList.of(
               new Query.FilterPredicate(ContactModel.PROPERTY_OWNER_USER_ID,
-                  Query.FilterOperator.EQUAL, toKey(ownerUserID)),
+                  Query.FilterOperator.EQUAL, ownerUserID),
               new Query.FilterPredicate(ContactModel.PROPERTY_PHONE_NUMBER,
-                  Query.FilterOperator.EQUAL, toKey(phoneNumber))));
+                  Query.FilterOperator.EQUAL, phoneNumber)));
       Entity entity =
           datastore.prepare(txn, new Query(ContactModel.KIND).setFilter(filter)).asSingleEntity();
       if (entity != null) {

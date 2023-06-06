@@ -36,9 +36,9 @@ public final class ConnectionDao {
     Query.Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND,
         ImmutableList.of(
             new Query.FilterPredicate(ConnectionModel.PROPERTY_OWNER_USER_ID,
-                Query.FilterOperator.EQUAL, toKey(ownerUserID)),
+                Query.FilterOperator.EQUAL, ownerUserID),
             new Query.FilterPredicate(ConnectionModel.PROPERTY_TARGET_USER_ID,
-                Query.FilterOperator.EQUAL, toKey(targetUserID))));
+                Query.FilterOperator.EQUAL, targetUserID)));
     Entity entity =
         datastore.prepare(txn, new Query(ConnectionModel.KIND).setFilter(filter)).asSingleEntity();
     if (entity != null) {

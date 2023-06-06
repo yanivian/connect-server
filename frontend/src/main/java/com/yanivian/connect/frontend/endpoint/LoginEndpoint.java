@@ -10,10 +10,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.dao.ImageDao;
-import com.yanivian.connect.frontend.dao.ImageDao.ImageModel;
-import com.yanivian.connect.frontend.dao.ProfileDao;
-import com.yanivian.connect.frontend.dao.ProfileDao.ProfileModel;
+import com.yanivian.connect.frontend.aspect.ProfilesAspect;
 import com.yanivian.connect.frontend.proto.api.LoginContext;
 import com.yanivian.connect.frontend.proto.model.Profile;
 
@@ -33,10 +30,9 @@ public final class LoginEndpoint extends GuiceEndpoint {
   @Inject
   private AuthHelper authHelper;
   @Inject
-  private ProfileDao profileDao;
-  @Inject
-  private ImageDao imageDao;
+  private ProfilesAspect profilesAspect;
 
+  // Servlets must have public no-arg constructors.
   public LoginEndpoint() {}
 
   @Override
@@ -54,30 +50,9 @@ public final class LoginEndpoint extends GuiceEndpoint {
     String phoneNumber = req.getParameter(PARAM_PHONE_NUMBER);
     Preconditions.checkArgument(!Strings.isNullOrEmpty(phoneNumber),
         "Missing parameter: " + PARAM_PHONE_NUMBER);
-    Profile profile = getOrCreateProfile(phoneNumber, userID);
+    Profile profile = profilesAspect.getOrCreateProfile(userID.get(), phoneNumber);
     loginContext.setProfile(profile);
 
     writeJsonResponse(resp, loginContext.build());
-  }
-
-  private Profile getOrCreateProfile(String phoneNumber, Optional<String> userID) {
-    ProfileModel profileModel = getOrCreateProfile(userID.get(), phoneNumber);
-    Profile profile = profileModel.toProto();
-
-    Optional<ImageModel> imageModel = profileModel.getImage().flatMap(imageDao::getImage);
-    if (imageModel.isPresent()) {
-      profile = profile.toBuilder().setImage(imageModel.get().toProto()).build();
-    }
-    return profile;
-  }
-
-  private ProfileModel getOrCreateProfile(String userID, String phoneNumber) {
-    Optional<ProfileModel> profileModel = profileDao.getProfileByUserId(userID);
-    if (profileModel.isPresent()) {
-      logger.atError().log("Found profile.");
-      return profileModel.get();
-    }
-    logger.atError().log("Creating and potentially replacing profile.");
-    return profileDao.createProfile(userID, phoneNumber);
   }
 }

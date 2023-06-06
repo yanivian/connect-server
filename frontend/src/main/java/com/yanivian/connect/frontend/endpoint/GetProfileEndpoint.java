@@ -8,10 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.dao.ImageDao;
-import com.yanivian.connect.frontend.dao.ImageDao.ImageModel;
-import com.yanivian.connect.frontend.dao.ProfileDao;
-import com.yanivian.connect.frontend.dao.ProfileDao.ProfileModel;
+import com.yanivian.connect.frontend.aspect.ProfilesAspect;
 import com.yanivian.connect.frontend.proto.model.Profile;
 
 @WebServlet(name = "GetProfileEndpoint", urlPatterns = {"/profile/get"})
@@ -21,10 +18,9 @@ public final class GetProfileEndpoint extends GuiceEndpoint {
   @Inject
   private AuthHelper authHelper;
   @Inject
-  private ProfileDao profileDao;
-  @Inject
-  private ImageDao imageDao;
+  private ProfilesAspect profilesAspect;
 
+  // Servlets must have public no-arg constructors.
   public GetProfileEndpoint() {}
 
   @Override
@@ -33,18 +29,11 @@ public final class GetProfileEndpoint extends GuiceEndpoint {
     if (!userID.isPresent()) {
       return;
     }
-    Optional<ProfileModel> profileModel = profileDao.getProfileByUserId(userID.get());
-    if (!profileModel.isPresent()) {
+    Optional<Profile> profile = profilesAspect.getProfile(userID.get());
+    if (!profile.isPresent()) {
       resp.sendError(404);
       return;
     }
-    Profile profile = profileModel.get().toProto();
-
-    Optional<ImageModel> imageModel = profileModel.get().getImage().flatMap(imageDao::getImage);
-    if (imageModel.isPresent()) {
-      profile = profile.toBuilder().setImage(imageModel.get().toProto()).build();
-    }
-
-    writeJsonResponse(resp, profile);
+    writeJsonResponse(resp, profile.get());
   }
 }

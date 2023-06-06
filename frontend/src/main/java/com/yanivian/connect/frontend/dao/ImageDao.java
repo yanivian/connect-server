@@ -12,6 +12,7 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
 import com.yanivian.connect.frontend.dao.BlobDao.BlobNamespace;
 import com.yanivian.connect.frontend.proto.model.Image;
@@ -33,10 +34,11 @@ public final class ImageDao {
 
   /**
    * Uploads bytes representing an image as a blob and creates image metdata in datastore.
-   * 
+   *
    * @throws IOException
    */
-  public ImageModel createImage(InputStream inputStream, String userID) throws IOException {
+  public ImageModel createImage(Transaction txn, InputStream inputStream, String userID)
+      throws IOException {
     String id = UUID.randomUUID().toString();
 
     blobDao.createOrReplace(id, IMAGES, inputStream);
@@ -44,24 +46,24 @@ public final class ImageDao {
 
     Entity entity = new Entity(ImageModel.KIND, id);
     return new ImageModel(entity).setUserID(userID).setCreatedTimestampMillis(clock.millis())
-        .setURL(url).save(datastore);
+        .setURL(url).save(txn, datastore);
   }
 
   /** Fetches image metadata if present. */
-  public Optional<ImageModel> getImage(String imageID) {
+  public Optional<ImageModel> getImage(Transaction txn, String imageID) {
     Query imageQuery =
         new Query(ImageModel.KIND).setFilter(new Query.FilterPredicate(Entity.KEY_RESERVED_PROPERTY,
             Query.FilterOperator.EQUAL, toKey(imageID)));
-    Entity entity = datastore.prepare(imageQuery).asSingleEntity();
+    Entity entity = datastore.prepare(txn, imageQuery).asSingleEntity();
     return Optional.ofNullable(entity == null ? null : new ImageModel(entity));
   }
 
   /** Irreversably deletes both the image metadata and the image blob. */
-  public void deleteImage(ImageModel image, String actorID) throws IOException {
+  public void deleteImage(Transaction txn, ImageModel image, String actorID) throws IOException {
     Preconditions.checkState(Objects.equals(actorID, image.getUserID()));
     // TODO: Handle failure scenarios.
     blobDao.delete(image.getID(), IMAGES);
-    datastore.delete(toKey(image.getID()));
+    datastore.delete(txn, image.getKey());
   }
 
   public static class ImageModel extends DatastoreModel<Image, ImageModel> {

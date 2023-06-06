@@ -6,15 +6,10 @@ import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.dao.ImageDao;
-import com.yanivian.connect.frontend.dao.ImageDao.ImageModel;
-import com.yanivian.connect.frontend.dao.ProfileDao;
-import com.yanivian.connect.frontend.dao.ProfileDao.ProfileModel;
+import com.yanivian.connect.frontend.aspect.ProfilesAspect;
 import com.yanivian.connect.frontend.proto.model.Profile;
 
 @WebServlet(name = "UpdateProfileEndpoint", urlPatterns = {"/profile/update"})
@@ -28,10 +23,9 @@ public final class UpdateProfileEndpoint extends GuiceEndpoint {
   @Inject
   private AuthHelper authHelper;
   @Inject
-  private ProfileDao profileDao;
-  @Inject
-  private ImageDao imageDao;
+  private ProfilesAspect profilesAspect;
 
+  // Servlets must have public no-arg constructors.
   public UpdateProfileEndpoint() {}
 
   @Override
@@ -41,35 +35,14 @@ public final class UpdateProfileEndpoint extends GuiceEndpoint {
       return;
     }
 
-    Optional<ProfileModel> optionalProfileModel = profileDao.getProfileByUserId(userID.get());
-    if (!optionalProfileModel.isPresent()) {
+    Optional<Profile> profile =
+        profilesAspect.updateProfile(userID.get(), getOptionalParameter(req, PARAM_NAME),
+            getOptionalParameter(req, PARAM_EMAIL_ADDRESS), getOptionalParameter(req, PARAM_IMAGE));
+    if (!profile.isPresent()) {
       resp.sendError(404, "Profile not found: " + userID.get());
       return;
     }
-    ProfileModel profileModel = optionalProfileModel.get();
-
-    profileModel.setName(getOptionalParameter(req, PARAM_NAME));
-    profileModel.setEmailAddress(getOptionalParameter(req, PARAM_EMAIL_ADDRESS));
-
-    Optional<String> image = getOptionalParameter(req, PARAM_IMAGE);
-    profileModel.setImage(image);
-
-    Optional<ImageModel> imageModel = Optional.empty();
-    if (image.isPresent()) {
-      imageModel = imageDao.getImage(image.get());
-      Preconditions.checkState(
-          imageModel.isPresent() && Objects.equal(userID.get(), imageModel.get().getUserID()),
-          "Bad image in request: " + image.get());
-    }
-
-    profileDao.save(profileModel);
-
-    Profile profile = profileModel.toProto();
-    if (imageModel.isPresent()) {
-      profile = profile.toBuilder().setImage(imageModel.get().toProto()).build();
-    }
-
-    writeJsonResponse(resp, profile);
+    writeJsonResponse(resp, profile.get());
   }
 
   private static Optional<String> getOptionalParameter(HttpServletRequest req, String name) {

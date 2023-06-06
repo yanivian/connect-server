@@ -13,6 +13,7 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.CompositeFilterOperator;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
+import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
@@ -56,8 +57,9 @@ public final class ContactDao {
   }
 
   /**
-   * Deletes a contact by its unique ID, ensuring that the provided actor is the owner, returning
-   * {@code true} on success. Returns {@code false} if a contact with the given ID doesn't exist.
+   * Transactionally deletes a contact by its unique ID, ensuring that the provided actor is the
+   * owner, returning {@code true} on success. Returns {@code false} if a contact with the given ID
+   * doesn't exist.
    */
   public boolean deleteContact(String contactID, String actorID) {
     return DatastoreUtil.newTransaction(datastore, txn -> {
@@ -75,11 +77,20 @@ public final class ContactDao {
     });
   }
 
-  /** Fetches all contacts for an user. */
-  public ImmutableList<ContactModel> listContacts(String ownerUserID) {
+  /** Fetches all contacts owned by a given user. */
+  public ImmutableList<ContactModel> listContactsOwnedBy(Transaction txn, String ownerUserID) {
     Query query = new Query(ContactModel.KIND).setFilter(new FilterPredicate(
         ContactModel.PROPERTY_OWNER_USER_ID, FilterOperator.EQUAL, ownerUserID));
-    return Streams.stream(datastore.prepare(query).asIterable()).map(ContactModel::new)
+    return Streams.stream(datastore.prepare(txn, query).asIterable()).map(ContactModel::new)
+        .collect(ImmutableList.toImmutableList());
+  }
+
+  /** Fetches all contacts that reference a given phone number. */
+  public ImmutableList<ContactModel> listContactsTargetingPhoneNumber(Transaction txn,
+      String phoneNumber) {
+    Query query = new Query(ContactModel.KIND).setFilter(
+        new FilterPredicate(ContactModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
+    return Streams.stream(datastore.prepare(txn, query).asIterable()).map(ContactModel::new)
         .collect(ImmutableList.toImmutableList());
   }
 

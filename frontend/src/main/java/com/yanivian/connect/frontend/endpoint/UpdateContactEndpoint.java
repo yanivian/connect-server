@@ -25,6 +25,7 @@ public final class UpdateContactEndpoint extends GuiceEndpoint {
   @Inject
   private ContactDao contactDao;
 
+  // Servlets must have public no-arg constructors.
   public UpdateContactEndpoint() {}
 
   @Override

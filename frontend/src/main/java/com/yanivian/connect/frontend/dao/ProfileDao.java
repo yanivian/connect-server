@@ -11,6 +11,7 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
+import com.google.appengine.api.datastore.Transaction;
 import com.yanivian.connect.frontend.proto.model.Profile;
 
 public final class ProfileDao {
@@ -24,29 +25,29 @@ public final class ProfileDao {
     this.clock = clock;
   }
 
-  public Optional<ProfileModel> getProfileByUserId(String userID) {
+  public Optional<ProfileModel> getProfileByUserId(Transaction txn, String userID) {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(Entity.KEY_RESERVED_PROPERTY, FilterOperator.EQUAL, toKey(userID)));
-    Entity entity = datastore.prepare(query).asSingleEntity();
+    Entity entity = datastore.prepare(txn, query).asSingleEntity();
     return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
   }
 
-  public Optional<ProfileModel> getProfileByPhoneNumber(String phoneNumber) {
+  public Optional<ProfileModel> getProfileByPhoneNumber(Transaction txn, String phoneNumber) {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
-    Entity entity = datastore.prepare(query).asSingleEntity();
+    Entity entity = datastore.prepare(txn, query).asSingleEntity();
     return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
   }
 
   /** Creates, saves and returns a new profile. */
-  public ProfileModel createProfile(String userID, String phoneNumber) {
+  public ProfileModel createProfile(Transaction txn, String userID, String phoneNumber) {
     Entity entity = new Entity(ProfileModel.KIND, userID);
     return new ProfileModel(entity).setPhoneNumber(phoneNumber)
-        .setCreatedTimestampMillis(clock.millis()).save(datastore);
+        .setCreatedTimestampMillis(clock.millis()).save(txn, datastore);
   }
 
-  public void save(ProfileModel profile) {
-    profile.save(datastore);
+  public void save(Transaction txn, ProfileModel profile) {
+    profile.save(txn, datastore);
   }
 
   public static final class ProfileModel extends DatastoreModel<Profile, ProfileModel> {

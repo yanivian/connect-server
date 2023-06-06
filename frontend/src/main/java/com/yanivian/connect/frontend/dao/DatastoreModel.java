@@ -17,13 +17,6 @@ public abstract class DatastoreModel<M extends Message, DM extends DatastoreMode
 
   /** Saves any changes made to the entity to Datastore. */
   @SuppressWarnings("unchecked")
-  final DM save(DatastoreService datastore) {
-    datastore.put(entity);
-    return (DM) this;
-  }
-
-  /** Saves any changes made to the entity to Datastore. */
-  @SuppressWarnings("unchecked")
   final DM save(Transaction txn, DatastoreService datastore) {
     datastore.put(txn, entity);
     return (DM) this;

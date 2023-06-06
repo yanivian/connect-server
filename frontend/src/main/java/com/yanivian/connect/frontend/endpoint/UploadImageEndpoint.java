@@ -52,7 +52,7 @@ public class UploadImageEndpoint extends GuiceEndpoint {
         throw new IllegalStateException("Unsupported file extension: " + extension);
       }
     }
-    ImageModel model = imageDao.createImage(filePart.getInputStream(), userID.get());
+    ImageModel model = imageDao.createImage(null, filePart.getInputStream(), userID.get());
     writeJsonResponse(resp, model.toProto());
   }
 }

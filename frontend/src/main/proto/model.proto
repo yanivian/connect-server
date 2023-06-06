@@ -5,23 +5,29 @@ package frontend.model;
 option java_package = "com.yanivian.connect.frontend.proto.model";
 option java_multiple_files = true;
 
-message Profile {
-  string UserID = 1;
-  string PhoneNumber = 2;
-  int64 CreatedTimestampMillis = 3;
-  optional string Name = 4;
-  optional string EmailAddress = 5;
-  optional Image Image = 6;
-  optional int64 LastUpdatedTimestampMillis = 7;
-}
-
-message Image {
+// An uni-directional connection from the connection owner and a target user.
+message Connection {
   string ID = 1;
-  // ID of the user that uploaded and owns the image.
-  string UserID = 2;
-  int64 CreatedTimestampMillis = 3;
-  // URL that can dynamically serve the image blob.
-  string URL = 4;
+  // ID of the user that owns the connection.
+  string OwnerUserID = 2;
+  // ID of the user that is the target of this connection.
+  string TargetUserID = 3;
+
+  // Enumeration of the state of a connection.
+  enum ConnectionState {
+    UNDEFINED = 0;
+    // You have invited the target user to use the app.
+    INVITE = 1;
+    // You have requested to connect with the target user.
+    ASK_TO_CONNECT = 2;
+    // You are connected with the target user.
+    CONNECTED = 3;
+  }
+  // The state of the connection.
+  ConnectionState state = 4;
+
+  int64 CreatedTimestampMillis = 5;
+  optional int64 LastUpdatedTimestampMillis = 6;
 }
 
 // An user's device contact that has been invited by their phone number.
@@ -35,16 +41,21 @@ message Contact {
   optional int64 LastUpdatedTimestampMillis = 6;
 }
 
-// An uni-directional connection from the connection owner and a target user.
-message Connection {
+message Image {
   string ID = 1;
-  // ID of the user that owns the connection.
+  // ID of the user that uploaded and owns the image.
   string UserID = 2;
-  // ID of the user that is the target of this connection.
-  string TargetUserID = 3;
-  // Enumeration of the types of connections.
-  enum ConnectionType {
-    UNDEFINED = 0;
-    CONTACT = 1;
-  }
+  int64 CreatedTimestampMillis = 3;
+  // URL that can dynamically serve the image blob.
+  string URL = 4;
+}
+
+message Profile {
+  string UserID = 1;
+  string PhoneNumber = 2;
+  int64 CreatedTimestampMillis = 3;
+  optional string Name = 4;
+  optional string EmailAddress = 5;
+  optional Image Image = 6;
+  optional int64 LastUpdatedTimestampMillis = 7;
 }

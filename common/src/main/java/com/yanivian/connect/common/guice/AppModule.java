@@ -3,6 +3,7 @@ package com.yanivian.connect.common.guice;
 import java.io.IOException;
 import java.time.Clock;
 import javax.inject.Singleton;
+import com.google.appengine.api.datastore.AsyncDatastoreService;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.images.ImagesService;
@@ -32,6 +33,12 @@ public class AppModule extends AbstractModule {
   @Singleton
   DatastoreService provideDatastoreService() {
     return DatastoreServiceFactory.getDatastoreService();
+  }
+
+  @Provides
+  @Singleton
+  AsyncDatastoreService providAsyncDatastoreService() {
+    return DatastoreServiceFactory.getAsyncDatastoreService();
   }
 
   @Provides

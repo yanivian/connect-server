@@ -9,9 +9,9 @@ import java.util.UUID;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
 import com.yanivian.connect.frontend.dao.BlobDao.BlobNamespace;
@@ -51,11 +51,12 @@ public final class ImageDao {
 
   /** Fetches image metadata if present. */
   public Optional<ImageModel> getImage(Transaction txn, String imageID) {
-    Query imageQuery =
-        new Query(ImageModel.KIND).setFilter(new Query.FilterPredicate(Entity.KEY_RESERVED_PROPERTY,
-            Query.FilterOperator.EQUAL, toKey(imageID)));
-    Entity entity = datastore.prepare(txn, imageQuery).asSingleEntity();
-    return Optional.ofNullable(entity == null ? null : new ImageModel(entity));
+    try {
+      Entity entity = datastore.get(txn, toKey(imageID));
+      return Optional.of(new ImageModel(entity));
+    } catch (EntityNotFoundException enfe) {
+      return Optional.empty();
+    }
   }
 
   /** Irreversably deletes both the image metadata and the image blob. */

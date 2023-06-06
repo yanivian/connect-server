@@ -64,10 +64,8 @@ public final class ProfilesAspect {
       if (!optionalProfileModel.isPresent()) {
         return Optional.empty();
       }
-      ProfileModel profileModel = optionalProfileModel.get();
-      profileModel.setName(name);
-      profileModel.setEmailAddress(emailAddress);
-      profileModel.setImage(imageID);
+      ProfileModel profileModel = optionalProfileModel.get().setName(name)
+          .setEmailAddress(emailAddress).setImage(imageID).save(txn, datastore);
       return Optional.of(toProfile(txn, profileModel));
     });
   }

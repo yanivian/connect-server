@@ -50,10 +50,6 @@ public final class ProfileDao {
         .setCreatedTimestampMillis(clock.millis()).save(txn, datastore);
   }
 
-  public void save(Transaction txn, ProfileModel profile) {
-    profile.save(txn, datastore);
-  }
-
   public static final class ProfileModel extends DatastoreModel<Profile, ProfileModel> {
 
     static final String KIND = "Profile";

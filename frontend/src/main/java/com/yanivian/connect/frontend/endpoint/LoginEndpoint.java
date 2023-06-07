@@ -10,6 +10,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
+import com.yanivian.connect.frontend.aspect.ConnectionsAspect;
 import com.yanivian.connect.frontend.aspect.ProfilesAspect;
 import com.yanivian.connect.frontend.proto.api.LoginContext;
 import com.yanivian.connect.frontend.proto.model.Profile;
@@ -31,27 +32,36 @@ public final class LoginEndpoint extends GuiceEndpoint {
   private AuthHelper authHelper;
   @Inject
   private ProfilesAspect profilesAspect;
+  @Inject
+  private ConnectionsAspect connectionsAspect;
 
   // Servlets must have public no-arg constructors.
   public LoginEndpoint() {}
 
   @Override
   protected void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    Optional<String> userID = authHelper.getVerifiedUserID(req, resp);
-    if (!userID.isPresent()) {
+    Optional<String> optionalUserID = authHelper.getVerifiedUserID(req, resp);
+    if (!optionalUserID.isPresent()) {
       return;
     }
+    String userID = optionalUserID.get();
 
+    // Credentials
     LoginContext.Builder loginContext = LoginContext.newBuilder();
     loginContext.getCredentialsBuilder()
         .setGoogleCloudApiKey("AIzaSyCJDWjyam35lSTHQD0Odg7fughH_VAa9qk")
         .setOpenAIApiKey("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");
 
+    // Profile
     String phoneNumber = req.getParameter(PARAM_PHONE_NUMBER);
     Preconditions.checkArgument(!Strings.isNullOrEmpty(phoneNumber),
         "Missing parameter: " + PARAM_PHONE_NUMBER);
-    Profile profile = profilesAspect.getOrCreateProfile(userID.get(), phoneNumber);
+    Profile profile = profilesAspect.getOrCreateProfile(userID, phoneNumber);
+    Preconditions.checkState(phoneNumber.equals(profile.getPhoneNumber()));
     loginContext.setProfile(profile);
+
+    // Connections
+    loginContext.setConnectionsSnapshot(connectionsAspect.getSnapshot(userID, phoneNumber));
 
     writeJsonResponse(resp, loginContext.build());
   }

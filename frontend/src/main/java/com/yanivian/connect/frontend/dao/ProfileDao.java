@@ -1,6 +1,7 @@
 package com.yanivian.connect.frontend.dao;
 
 import java.time.Clock;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import javax.inject.Inject;
@@ -13,7 +14,9 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.appengine.api.datastore.Transaction;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.yanivian.connect.frontend.proto.model.Profile;
 
 public final class ProfileDao {
@@ -34,6 +37,14 @@ public final class ProfileDao {
     } catch (EntityNotFoundException enfe) {
       return Optional.empty();
     }
+  }
+
+  public ImmutableMap<String, ProfileModel> getProfilesByUserId(Transaction txn,
+      ImmutableSet<String> userIDs) {
+    Map<Key, Entity> entityMap =
+        datastore.get(txn, Iterables.transform(userIDs, ProfileDao::toKey));
+    return entityMap.entrySet().stream().collect(ImmutableMap.toImmutableMap(
+        entry -> entry.getKey().getName(), entry -> new ProfileModel(entry.getValue())));
   }
 
   public Optional<ProfileModel> getProfileByPhoneNumber(ImmutableSet<String> phoneNumbers) {

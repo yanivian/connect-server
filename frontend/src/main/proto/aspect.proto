@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package frontend.aspect;
+
+option java_package = "com.yanivian.connect.frontend.proto.aspect";
+option java_multiple_files = true;
+
+message ConnectionsSnapshot {
+  // List of users that have invited you to use the app.
+  repeated UserInfo Inviters = 1;
+  // Your connections.
+  repeated UserInfo Connections = 2;
+  // List of users that have asked to connect with you.
+  repeated UserInfo Incoming = 3;
+  // List of users with whom you have asked to connect.
+  repeated UserInfo Outgoing = 4;
+}
+
+message UserInfo {
+  string UserID = 1;
+  optional string Name = 2;
+  optional string ProfileImageURL = 3;
+  // Only populated if this user is connected to the requester.
+  optional string PhoneNumber = 4;
+}

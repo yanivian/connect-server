@@ -63,20 +63,18 @@ public final class ConnectionDao {
   }
 
   /** Fetches all connections originating from an user. */
-  public ImmutableList<ConnectionModel> listConnectionsForOwner(Transaction txn,
-      String ownerUserID) {
+  public ImmutableList<ConnectionModel> listConnectionsForOwner(String ownerUserID) {
     Query query = new Query(ConnectionModel.KIND).setFilter(new FilterPredicate(
         ConnectionModel.PROPERTY_OWNER_USER_ID, FilterOperator.EQUAL, ownerUserID));
-    return Streams.stream(datastore.prepare(txn, query).asIterable()).map(ConnectionModel::new)
+    return Streams.stream(datastore.prepare(query).asIterable()).map(ConnectionModel::new)
         .collect(ImmutableList.toImmutableList());
   }
 
   /** Fetches all connections targeting an user. */
-  public ImmutableList<ConnectionModel> listConnectionsForTarget(Transaction txn,
-      String targetUserID) {
+  public ImmutableList<ConnectionModel> listConnectionsForTarget(String targetUserID) {
     Query query = new Query(ConnectionModel.KIND).setFilter(new FilterPredicate(
         ConnectionModel.PROPERTY_TARGET_USER_ID, FilterOperator.EQUAL, targetUserID));
-    return Streams.stream(datastore.prepare(txn, query).asIterable()).map(ConnectionModel::new)
+    return Streams.stream(datastore.prepare(query).asIterable()).map(ConnectionModel::new)
         .collect(ImmutableList.toImmutableList());
   }
 

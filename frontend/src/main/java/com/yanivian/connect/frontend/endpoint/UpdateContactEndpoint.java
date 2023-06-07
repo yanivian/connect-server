@@ -6,8 +6,6 @@ import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
 import com.yanivian.connect.frontend.dao.ContactDao;
@@ -39,11 +37,5 @@ public final class UpdateContactEndpoint extends GuiceEndpoint {
         getRequiredParameter(req, PARAM_PHONE_NUMBER), getRequiredParameter(req, PARAM_NAME));
 
     writeJsonResponse(resp, contact.toProto());
-  }
-
-  private static String getRequiredParameter(HttpServletRequest req, String name) {
-    String value = req.getParameter(name);
-    Preconditions.checkState(!Strings.isNullOrEmpty(value));
-    return value;
   }
 }

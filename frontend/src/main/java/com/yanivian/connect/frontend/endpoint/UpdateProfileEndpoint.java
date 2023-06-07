@@ -6,7 +6,6 @@ import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.google.common.base.Strings;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
 import com.yanivian.connect.frontend.aspect.ProfilesAspect;
@@ -43,10 +42,5 @@ public final class UpdateProfileEndpoint extends GuiceEndpoint {
       return;
     }
     writeJsonResponse(resp, profile.get());
-  }
-
-  private static Optional<String> getOptionalParameter(HttpServletRequest req, String name) {
-    String value = req.getParameter(name);
-    return Strings.isNullOrEmpty(value) ? Optional.empty() : Optional.of(value);
   }
 }

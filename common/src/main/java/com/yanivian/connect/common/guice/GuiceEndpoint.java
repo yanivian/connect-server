@@ -6,6 +6,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.inject.Injector;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
@@ -56,6 +58,17 @@ public abstract class GuiceEndpoint extends HttpServlet {
     Preconditions.checkState(getClass().isAnnotationPresent(AllowPost.class),
         "POST not supported.");
     process(req, resp);
+  }
+
+  protected String getRequiredParameter(HttpServletRequest req, String name) {
+    String value = req.getParameter(name);
+    Preconditions.checkState(!Strings.isNullOrEmpty(value));
+    return value;
+  }
+
+  protected Optional<String> getOptionalParameter(HttpServletRequest req, String name) {
+    String value = req.getParameter(name);
+    return Strings.isNullOrEmpty(value) ? Optional.empty() : Optional.of(value);
   }
 
   /** Writes a protobuf message as a json response. */

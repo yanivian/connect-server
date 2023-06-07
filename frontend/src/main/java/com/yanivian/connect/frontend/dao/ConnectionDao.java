@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
@@ -30,9 +31,31 @@ public final class ConnectionDao {
     this.clock = clock;
   }
 
-  /** Creates or updates a connection. */
-  public ConnectionModel createOrUpdateConnection(Transaction txn, String ownerUserID,
-      String targetUserID, ConnectionState state) {
+  /** Creates or updates a connection transactionally. */
+  public ConnectionModel createOrUpdateConnection(String ownerUserID, String targetUserID,
+      ConnectionState state) {
+    Optional<ConnectionModel> optionalConnectionModel = findConnection(ownerUserID, targetUserID);
+    return DatastoreUtil.newTransaction(datastore, txn -> {
+      if (optionalConnectionModel.isPresent()) {
+        // Fetch the connection, this time inside the transaction.
+        ConnectionModel connectionModel = getConnection(txn, optionalConnectionModel.get().getKey())
+            .orElseThrow(IllegalStateException::new);
+        // Update the connection.
+        if (connectionModel.getState().equals(state)) {
+          // Since the state is current, an update is redundant and therefore skipped.
+          return connectionModel;
+        }
+        return connectionModel.setState(state).setLastUpdatedTimestampMillis(clock.millis())
+            .save(txn, datastore);
+      }
+      // Create a new connection.
+      Entity entity = new Entity(ConnectionModel.KIND, UUID.randomUUID().toString());
+      return new ConnectionModel(entity).setOwnerUserID(ownerUserID).setTargetUserID(targetUserID)
+          .setState(state).setCreatedTimestampMillis(clock.millis()).save(txn, datastore);
+    });
+  }
+
+  private Optional<ConnectionModel> findConnection(String ownerUserID, String targetUserID) {
     Query.Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND,
         ImmutableList.of(
             new Query.FilterPredicate(ConnectionModel.PROPERTY_OWNER_USER_ID,
@@ -40,21 +63,16 @@ public final class ConnectionDao {
             new Query.FilterPredicate(ConnectionModel.PROPERTY_TARGET_USER_ID,
                 Query.FilterOperator.EQUAL, targetUserID)));
     Entity entity =
-        datastore.prepare(txn, new Query(ConnectionModel.KIND).setFilter(filter)).asSingleEntity();
-    if (entity != null) {
-      // Update the existing connection.
-      ConnectionModel connectionModel = new ConnectionModel(entity);
-      if (connectionModel.getState().equals(state)) {
-        // Since the state is current, an update is redundant and therefore skipped.
-        return connectionModel;
-      }
-      return connectionModel.setState(state).setLastUpdatedTimestampMillis(clock.millis()).save(txn,
-          datastore);
+        datastore.prepare(new Query(ConnectionModel.KIND).setFilter(filter)).asSingleEntity();
+    return (entity == null) ? Optional.empty() : Optional.of(new ConnectionModel(entity));
+  }
+
+  private Optional<ConnectionModel> getConnection(Transaction txn, Key key) {
+    try {
+      return Optional.of(new ConnectionModel(datastore.get(txn, key)));
+    } catch (EntityNotFoundException enfe) {
+      return Optional.empty();
     }
-    // Create a new connection.
-    entity = new Entity(ConnectionModel.KIND, UUID.randomUUID().toString());
-    return new ConnectionModel(entity).setOwnerUserID(ownerUserID).setTargetUserID(targetUserID)
-        .setState(state).setCreatedTimestampMillis(clock.millis()).save(txn, datastore);
   }
 
   /** Deletes the given connection. */

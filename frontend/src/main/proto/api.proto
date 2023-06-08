@@ -9,8 +9,8 @@ option java_package = "com.yanivian.connect.frontend.proto.api";
 option java_multiple_files = true;
 
 message AddConnectionResult {
-  .frontend.aspect.UserInfo user = 1;
-  bool isConnected = 2;
+  .frontend.aspect.UserInfo User = 1;
+  bool IsConnected = 2;
 }
 
 message LoginContext {

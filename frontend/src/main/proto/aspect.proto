@@ -2,18 +2,22 @@ syntax = "proto3";
 
 package frontend.aspect;
 
+import "model.proto";
+
 option java_package = "com.yanivian.connect.frontend.proto.aspect";
 option java_multiple_files = true;
 
 message ConnectionsSnapshot {
+  // List of contacts that you have invited to use the app.
+  repeated .frontend.model.Contact Invites = 1;
   // List of users that have invited you to use the app.
-  repeated UserInfo Inviters = 1;
+  repeated UserInfo Inviters = 2;
   // Your connections.
-  repeated UserInfo Connections = 2;
+  repeated UserInfo Connections = 3;
   // List of users that have asked to connect with you.
-  repeated UserInfo Incoming = 3;
+  repeated UserInfo Incoming = 4;
   // List of users with whom you have asked to connect.
-  repeated UserInfo Outgoing = 4;
+  repeated UserInfo Outgoing = 5;
 }
 
 message UserInfo {

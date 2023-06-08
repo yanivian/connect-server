@@ -55,6 +55,7 @@ public final class ConnectionDao {
     });
   }
 
+  // Cannot be transactional.
   private Optional<ConnectionModel> findConnection(String ownerUserID, String targetUserID) {
     Query.Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND,
         ImmutableList.of(
@@ -81,6 +82,7 @@ public final class ConnectionDao {
   }
 
   /** Fetches all connections originating from an user. */
+  // Cannot be transactional.
   public ImmutableList<ConnectionModel> listConnectionsForOwner(String ownerUserID) {
     Query query = new Query(ConnectionModel.KIND).setFilter(new FilterPredicate(
         ConnectionModel.PROPERTY_OWNER_USER_ID, FilterOperator.EQUAL, ownerUserID));
@@ -89,6 +91,7 @@ public final class ConnectionDao {
   }
 
   /** Fetches all connections targeting an user. */
+  // Cannot be transactional.
   public ImmutableList<ConnectionModel> listConnectionsForTarget(String targetUserID) {
     Query query = new Query(ConnectionModel.KIND).setFilter(new FilterPredicate(
         ConnectionModel.PROPERTY_TARGET_USER_ID, FilterOperator.EQUAL, targetUserID));

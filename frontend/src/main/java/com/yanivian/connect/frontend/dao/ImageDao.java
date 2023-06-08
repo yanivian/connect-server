@@ -3,6 +3,7 @@ package com.yanivian.connect.frontend.dao;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,6 +15,9 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.yanivian.connect.frontend.dao.BlobDao.BlobNamespace;
 import com.yanivian.connect.frontend.proto.model.Image;
 
@@ -57,6 +61,14 @@ public final class ImageDao {
     } catch (EntityNotFoundException enfe) {
       return Optional.empty();
     }
+  }
+
+  /** Fetches image metadata for multiple images. */
+  public ImmutableMap<String, ImageModel> getImages(Transaction txn,
+      ImmutableSet<String> imageIDs) {
+    Map<Key, Entity> entityMap = datastore.get(txn, Iterables.transform(imageIDs, ImageDao::toKey));
+    return entityMap.entrySet().stream().collect(ImmutableMap.toImmutableMap(
+        entry -> entry.getKey().getName(), entry -> new ImageModel(entry.getValue())));
   }
 
   /** Irreversably deletes both the image metadata and the image blob. */

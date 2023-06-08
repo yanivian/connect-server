@@ -47,9 +47,10 @@ public final class ProfileDao {
         entry -> entry.getKey().getName(), entry -> new ProfileModel(entry.getValue())));
   }
 
-  public Optional<ProfileModel> getProfileByPhoneNumber(ImmutableSet<String> phoneNumbers) {
+  // Cannot be transactional.
+  public Optional<ProfileModel> getProfileByPhoneNumber(String phoneNumber) {
     Query query = new Query(ProfileModel.KIND).setFilter(
-        new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.IN, phoneNumbers));
+        new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
     Entity entity = datastore.prepare(query).asSingleEntity();
     return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
   }

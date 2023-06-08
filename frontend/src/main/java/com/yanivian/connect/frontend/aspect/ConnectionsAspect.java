@@ -92,7 +92,8 @@ public final class ConnectionsAspect {
       LOGGER.atInfo().log("- Bulk-Fetched {} Profile Images.", profileImages.size());
 
       // Inviters
-      ImmutableList<UserInfo> inviters = toUserInfos(inviterUserIDs, profileModels, profileImages);
+      ImmutableList<UserInfo> inviters =
+          toUserInfos(inviterUserIDs, false, profileModels, profileImages);
       LOGGER.atInfo().log("- Output {} Inviters.", inviters.size());
 
       // Connections
@@ -103,19 +104,21 @@ public final class ConnectionsAspect {
       ImmutableSet<String> connectedUserIDs =
           ImmutableSet.copyOf(Sets.intersection(allIncomingUserIDs, allOutgoingUserIDs));
       ImmutableList<UserInfo> connected =
-          toUserInfos(connectedUserIDs, profileModels, profileImages);
+          toUserInfos(connectedUserIDs, true, profileModels, profileImages);
       LOGGER.atInfo().log("- Output {} Connected.", inviters.size());
 
       // Incoming
       ImmutableSet<String> incomingUserIDs =
           ImmutableSet.copyOf(Sets.difference(allIncomingUserIDs, connectedUserIDs));
-      ImmutableList<UserInfo> incoming = toUserInfos(incomingUserIDs, profileModels, profileImages);
+      ImmutableList<UserInfo> incoming =
+          toUserInfos(incomingUserIDs, false, profileModels, profileImages);
       LOGGER.atInfo().log("- Output {} Incoming.", incoming.size());
 
       // Outgoing
       ImmutableSet<String> outgoingUserIDs =
           ImmutableSet.copyOf(Sets.difference(allOutgoingUserIDs, connectedUserIDs));
-      ImmutableList<UserInfo> outgoing = toUserInfos(outgoingUserIDs, profileModels, profileImages);
+      ImmutableList<UserInfo> outgoing =
+          toUserInfos(outgoingUserIDs, false, profileModels, profileImages);
       LOGGER.atInfo().log("- Output {} Outgoing.", outgoing.size());
 
       // Consolidate as a snapshot.
@@ -125,22 +128,27 @@ public final class ConnectionsAspect {
   }
 
   private static ImmutableList<UserInfo> toUserInfos(ImmutableSet<String> userIDs,
-      ImmutableMap<String, ProfileModel> profileModels,
+      boolean isConnected, ImmutableMap<String, ProfileModel> profileModels,
       ImmutableMap<String, ImageModel> profileImages) {
     ImmutableList<UserInfo> connected = userIDs.stream().filter(profileModels::containsKey)
         .map(profileModels::get).map(profileModel -> {
           Optional<ImageModel> imageModel = profileModel.getImage()
               .flatMap(imageID -> Optional.ofNullable(profileImages.get(imageID)));
-          return toUserInfo(profileModel, imageModel);
+          return toUserInfo(profileModel, isConnected, imageModel);
         }).collect(ImmutableList.toImmutableList());
     return connected;
   }
 
-  private static UserInfo toUserInfo(ProfileModel profileModel, Optional<ImageModel> imageModel) {
-    UserInfo.Builder user = UserInfo.newBuilder().setPhoneNumber(profileModel.getPhoneNumber())
-        .setUserID(profileModel.getID());
+  private static UserInfo toUserInfo(ProfileModel profileModel, boolean isConnected,
+      Optional<ImageModel> imageModel) {
+    UserInfo.Builder user = UserInfo.newBuilder().setUserID(profileModel.getID());
+    if (isConnected) {
+      user.setPhoneNumber(profileModel.getPhoneNumber());
+    }
     profileModel.getName().ifPresent(user::setName);
-    profileModel.getImage().ifPresent(user::setProfileImageURL);
+    if (imageModel.isPresent()) {
+      user.setImage(imageModel.get().toProto());
+    }
     return user.build();
   }
 }

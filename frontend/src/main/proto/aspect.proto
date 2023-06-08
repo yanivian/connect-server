@@ -22,8 +22,8 @@ message ConnectionsSnapshot {
 
 message UserInfo {
   string UserID = 1;
-  optional string Name = 2;
-  optional string ProfileImageURL = 3;
-  // Only populated if this user is connected to the requester.
-  optional string PhoneNumber = 4;
+  // The phone number is populated for connected users.
+  optional string PhoneNumber = 2;
+  optional string Name = 3;
+  optional .frontend.model.Image Image = 4;
 }

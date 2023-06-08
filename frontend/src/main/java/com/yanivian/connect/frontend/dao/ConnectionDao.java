@@ -149,11 +149,11 @@ public final class ConnectionDao {
     }
 
     public ConnectionState getState() {
-      return (ConnectionState) entity.getProperty(PROPERTY_STATE);
+      return ConnectionState.valueOf(entity.getProperty(PROPERTY_STATE).toString());
     }
 
     private ConnectionModel setState(ConnectionState state) {
-      entity.setProperty(PROPERTY_STATE, state);
+      entity.setProperty(PROPERTY_STATE, state.name());
       return this;
     }
 

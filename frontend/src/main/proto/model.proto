@@ -16,7 +16,7 @@ message Connection {
   // Enumeration of the state of a connection.
   enum ConnectionState {
     UNDEFINED = 0;
-    // You have invited the target user to connect with you on the app.
+    // You have asked the target user to connect with you on the app.
     ASK_TO_CONNECT = 1;
     // You are connected with the target user.
     CONNECTED = 2;

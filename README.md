@@ -1,8 +1,13 @@
 # connect-server
 
-Connect is an GAE backend to be paired with [connect-app](https://github.com/yanivian/connect-app).
+This project defines Google App Engine services to be paired with [connect-app](https://github.com/yanivian/connect-app).
 
-To deploy the frontend webapp (as the default service), run:
+To deploy the frontend (default) service, run:
 ```
 ./gradlew :frontend:appengineDeploy
+```
+
+To deploy the Datastore index, run:
+```
+./gradlew :frontend:appengineDeployIndex
 ```

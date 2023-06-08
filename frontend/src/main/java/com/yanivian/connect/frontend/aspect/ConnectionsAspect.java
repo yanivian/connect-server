@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.google.appengine.api.datastore.DatastoreService;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -23,6 +24,7 @@ import com.yanivian.connect.frontend.dao.ProfileDao;
 import com.yanivian.connect.frontend.dao.ProfileDao.ProfileModel;
 import com.yanivian.connect.frontend.proto.aspect.ConnectionsSnapshot;
 import com.yanivian.connect.frontend.proto.aspect.UserInfo;
+import com.yanivian.connect.frontend.proto.model.Connection.ConnectionState;
 import com.yanivian.connect.frontend.proto.model.Contact;
 
 /** Aspect that deals with connection management. */
@@ -44,6 +46,45 @@ public final class ConnectionsAspect {
     this.profileDao = profileDao;
     this.imageDao = imageDao;
     this.datastore = datastore;
+  }
+
+  public ConnectionModel connect(String actorUserID, String targetUserID) {
+    LOGGER.atInfo().log("Adding Connection: Actor={}, Target={}", actorUserID, targetUserID);
+
+    Optional<ConnectionModel> outgoingConnection =
+        connectionDao.findConnection(actorUserID, targetUserID);
+    ConnectionState outgoingConnectionState =
+        outgoingConnection.map(ConnectionModel::getState).orElse(ConnectionState.UNDEFINED);
+    LOGGER.atInfo().log("- Outgoing connection state: {}", outgoingConnectionState);
+
+    Optional<ConnectionModel> incomingConnection =
+        connectionDao.findConnection(targetUserID, actorUserID);
+    ConnectionState incomingConnectionState =
+        incomingConnection.map(ConnectionModel::getState).orElse(ConnectionState.UNDEFINED);
+    LOGGER.atInfo().log("- Incoming connection state: {}", incomingConnectionState);
+
+    switch (incomingConnectionState) {
+      case UNDEFINED:
+        // Create a new outgoing connection.
+        Preconditions.checkState(outgoingConnectionState.equals(ConnectionState.UNDEFINED)
+            || outgoingConnectionState.equals(ConnectionState.ASK_TO_CONNECT));
+        return connectionDao.createOrUpdateConnection(actorUserID, targetUserID,
+            ConnectionState.ASK_TO_CONNECT);
+      case ASK_TO_CONNECT:
+        // The target user has asked to connect with the actor.
+        Preconditions.checkState(outgoingConnectionState.equals(ConnectionState.UNDEFINED));
+        return DatastoreUtil.newTransaction(datastore, txn -> {
+          connectionDao.updateConnection(txn, incomingConnection.get(), ConnectionState.CONNECTED);
+          return connectionDao.createConnection(txn, actorUserID, targetUserID,
+              ConnectionState.CONNECTED);
+        });
+      case CONNECTED:
+        // Already connected.
+        Preconditions.checkState(outgoingConnectionState.equals(incomingConnectionState));
+        return outgoingConnection.get();
+      default:
+        throw new IllegalStateException("Could not connect");
+    }
   }
 
   public ConnectionsSnapshot getSnapshot(String ownerUserID, String ownerPhoneNumber) {

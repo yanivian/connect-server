@@ -31,32 +31,41 @@ public final class ConnectionDao {
     this.clock = clock;
   }
 
+  public ConnectionModel createConnection(Transaction txn, String ownerUserID, String targetUserID,
+      ConnectionState state) {
+    Entity entity = new Entity(ConnectionModel.KIND, UUID.randomUUID().toString());
+    return new ConnectionModel(entity).setOwnerUserID(ownerUserID).setTargetUserID(targetUserID)
+        .setState(state).setCreatedTimestampMillis(clock.millis()).save(txn, datastore);
+  }
+
+  public ConnectionModel updateConnection(Transaction txn, ConnectionModel connection,
+      ConnectionState state) {
+    // Fetch the connection transactionally.
+    ConnectionModel connectionModel =
+        getConnection(txn, connection.getKey()).orElseThrow(IllegalStateException::new);
+    // Don't update if already in the desired state.
+    if (connectionModel.getState().equals(state)) {
+      return connectionModel;
+    }
+    // Update the connection.
+    return connectionModel.setState(state).setLastUpdatedTimestampMillis(clock.millis()).save(txn,
+        datastore);
+  }
+
   /** Creates or updates a connection transactionally. */
   public ConnectionModel createOrUpdateConnection(String ownerUserID, String targetUserID,
       ConnectionState state) {
     Optional<ConnectionModel> optionalConnectionModel = findConnection(ownerUserID, targetUserID);
     return DatastoreUtil.newTransaction(datastore, txn -> {
       if (optionalConnectionModel.isPresent()) {
-        // Fetch the connection, this time inside the transaction.
-        ConnectionModel connectionModel = getConnection(txn, optionalConnectionModel.get().getKey())
-            .orElseThrow(IllegalStateException::new);
-        // Update the connection.
-        if (connectionModel.getState().equals(state)) {
-          // Since the state is current, an update is redundant and therefore skipped.
-          return connectionModel;
-        }
-        return connectionModel.setState(state).setLastUpdatedTimestampMillis(clock.millis())
-            .save(txn, datastore);
+        return updateConnection(txn, optionalConnectionModel.get(), state);
       }
-      // Create a new connection.
-      Entity entity = new Entity(ConnectionModel.KIND, UUID.randomUUID().toString());
-      return new ConnectionModel(entity).setOwnerUserID(ownerUserID).setTargetUserID(targetUserID)
-          .setState(state).setCreatedTimestampMillis(clock.millis()).save(txn, datastore);
+      return createConnection(txn, ownerUserID, targetUserID, state);
     });
   }
 
   // Cannot be transactional.
-  private Optional<ConnectionModel> findConnection(String ownerUserID, String targetUserID) {
+  public Optional<ConnectionModel> findConnection(String ownerUserID, String targetUserID) {
     Query.Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND,
         ImmutableList.of(
             new Query.FilterPredicate(ConnectionModel.PROPERTY_OWNER_USER_ID,
@@ -68,7 +77,7 @@ public final class ConnectionDao {
     return (entity == null) ? Optional.empty() : Optional.of(new ConnectionModel(entity));
   }
 
-  private Optional<ConnectionModel> getConnection(Transaction txn, Key key) {
+  public Optional<ConnectionModel> getConnection(Transaction txn, Key key) {
     try {
       return Optional.of(new ConnectionModel(datastore.get(txn, key)));
     } catch (EntityNotFoundException enfe) {

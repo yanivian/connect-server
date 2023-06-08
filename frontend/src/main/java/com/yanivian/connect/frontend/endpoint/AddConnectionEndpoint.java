@@ -8,24 +8,22 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.dao.ConnectionDao;
+import com.yanivian.connect.frontend.aspect.ConnectionsAspect;
 import com.yanivian.connect.frontend.dao.ConnectionDao.ConnectionModel;
-import com.yanivian.connect.frontend.proto.model.Connection.ConnectionState;
 
-@WebServlet(name = "UpdateConnectionEndpoint", urlPatterns = {"/connection/update"})
+@WebServlet(name = "AddConnectionEndpoint", urlPatterns = {"/connection/add"})
 @AllowPost
-public final class UpdateConnectionEndpoint extends GuiceEndpoint {
+public final class AddConnectionEndpoint extends GuiceEndpoint {
 
   private static final String PARAM_TARGET_USER_ID = "targetUserID";
-  private static final String PARAM_STATE = "state";
 
   @Inject
   private AuthHelper authHelper;
   @Inject
-  private ConnectionDao connectionDao;
+  private ConnectionsAspect connectionsAspect;
 
   // Servlets must have public no-arg constructors.
-  public UpdateConnectionEndpoint() {}
+  public AddConnectionEndpoint() {}
 
   @Override
   protected void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -35,10 +33,7 @@ public final class UpdateConnectionEndpoint extends GuiceEndpoint {
     }
 
     String targetUserID = getRequiredParameter(req, PARAM_TARGET_USER_ID);
-    ConnectionState state = ConnectionState.valueOf(getRequiredParameter(req, PARAM_STATE));
-
-    ConnectionModel connection =
-        connectionDao.createOrUpdateConnection(userID.get(), targetUserID, state);
+    ConnectionModel connection = connectionsAspect.connect(userID.get(), targetUserID);
 
     writeJsonResponse(resp, connection.toProto());
   }

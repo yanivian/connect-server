@@ -8,8 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.aspect.ConnectionsAspect;
-import com.yanivian.connect.frontend.proto.api.AddConnectionResult;
+import com.yanivian.connect.backend.aspect.ConnectionsAspect;
+import com.yanivian.connect.backend.proto.aspect.AddConnectionResult;
 
 @WebServlet(name = "AddConnectionEndpoint", urlPatterns = {"/connection/add"})
 @AllowPost

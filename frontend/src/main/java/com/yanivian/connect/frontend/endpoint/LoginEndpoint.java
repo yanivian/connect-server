@@ -10,10 +10,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.aspect.ConnectionsAspect;
-import com.yanivian.connect.frontend.aspect.ProfilesAspect;
+import com.yanivian.connect.backend.aspect.ConnectionsAspect;
+import com.yanivian.connect.backend.aspect.ProfilesAspect;
 import com.yanivian.connect.frontend.proto.api.LoginContext;
-import com.yanivian.connect.frontend.proto.model.Profile;
+import com.yanivian.connect.backend.proto.model.Profile;
 
 /**
  * Provides {@link LoginContext} to clients. This includes the following:

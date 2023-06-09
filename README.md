@@ -9,5 +9,5 @@ To deploy the frontend (default) service, run:
 
 To deploy the Datastore index, run:
 ```
-./gradlew :frontend:appengineDeployIndex
+./gradlew :backend:appengineDeployIndex
 ```

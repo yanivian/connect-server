@@ -1,4 +1,4 @@
-package com.yanivian.connect.frontend.dao;
+package com.yanivian.connect.backend.dao;
 
 import java.time.Clock;
 import java.util.Map;
@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
-import com.yanivian.connect.frontend.proto.model.Profile;
+import com.yanivian.connect.backend.proto.model.Profile;
 
 public final class ProfileDao {
 

@@ -8,8 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.aspect.ProfilesAspect;
-import com.yanivian.connect.frontend.proto.model.Profile;
+import com.yanivian.connect.backend.aspect.ProfilesAspect;
+import com.yanivian.connect.backend.proto.model.Profile;
 
 @WebServlet(name = "GetProfileEndpoint", urlPatterns = {"/profile/get"})
 @AllowPost

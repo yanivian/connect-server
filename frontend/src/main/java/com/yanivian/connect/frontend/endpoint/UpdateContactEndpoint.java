@@ -8,8 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.dao.ContactDao;
-import com.yanivian.connect.frontend.dao.ContactDao.ContactModel;
+import com.yanivian.connect.backend.dao.ContactDao;
+import com.yanivian.connect.backend.dao.ContactDao.ContactModel;
 
 @WebServlet(name = "UpdateContactEndpoint", urlPatterns = {"/contact/update"})
 @AllowPost

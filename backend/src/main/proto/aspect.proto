@@ -1,15 +1,21 @@
 syntax = "proto3";
 
-package frontend.aspect;
+package backend.aspect;
 
 import "model.proto";
 
-option java_package = "com.yanivian.connect.frontend.proto.aspect";
+option java_package = "com.yanivian.connect.backend.proto.aspect";
 option java_multiple_files = true;
+
+
+message AddConnectionResult {
+  UserInfo User = 1;
+  bool IsConnected = 2;
+}
 
 message ConnectionsSnapshot {
   // List of contacts that you have invited to use the app.
-  repeated .frontend.model.Contact Invites = 1;
+  repeated .backend.model.Contact Invites = 1;
   // List of users that have invited you to use the app.
   repeated UserInfo Inviters = 2;
   // Your connections.
@@ -25,5 +31,5 @@ message UserInfo {
   // The phone number is populated for connected users.
   optional string PhoneNumber = 2;
   optional string Name = 3;
-  optional .frontend.model.Image Image = 4;
+  optional .backend.model.Image Image = 4;
 }

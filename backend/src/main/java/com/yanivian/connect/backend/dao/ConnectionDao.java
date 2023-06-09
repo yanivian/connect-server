@@ -1,4 +1,4 @@
-package com.yanivian.connect.frontend.dao;
+package com.yanivian.connect.backend.dao;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -17,8 +17,8 @@ import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
-import com.yanivian.connect.frontend.proto.model.Connection;
-import com.yanivian.connect.frontend.proto.model.Connection.ConnectionState;
+import com.yanivian.connect.backend.proto.model.Connection;
+import com.yanivian.connect.backend.proto.model.Connection.ConnectionState;
 
 public final class ConnectionDao {
 

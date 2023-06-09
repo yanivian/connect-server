@@ -1,4 +1,4 @@
-package com.yanivian.connect.frontend.dao;
+package com.yanivian.connect.backend.dao;
 
 import java.util.Optional;
 import com.google.appengine.api.datastore.DatastoreService;

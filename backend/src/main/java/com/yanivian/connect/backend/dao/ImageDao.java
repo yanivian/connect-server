@@ -1,4 +1,4 @@
-package com.yanivian.connect.frontend.dao;
+package com.yanivian.connect.backend.dao;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,8 +18,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.yanivian.connect.frontend.dao.BlobDao.BlobNamespace;
-import com.yanivian.connect.frontend.proto.model.Image;
+import com.yanivian.connect.backend.dao.BlobDao.BlobNamespace;
+import com.yanivian.connect.backend.proto.model.Image;
 
 public final class ImageDao {
 

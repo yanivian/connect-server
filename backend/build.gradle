@@ -1,8 +1,6 @@
 apply plugin: 'com.google.cloud.tools.appengine'
-apply plugin: 'war'
 
 dependencies {
-  implementation project(":backend")
   implementation project(":common")
 
   implementation libs.appengine
@@ -13,10 +11,6 @@ dependencies {
 }
 
 appengine {
-  run {
-    port = 8080
-  }
-
   deploy {
     projectId = 'connect-on-firebase'
     promote = true

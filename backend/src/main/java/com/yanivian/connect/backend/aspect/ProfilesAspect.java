@@ -1,4 +1,4 @@
-package com.yanivian.connect.frontend.aspect;
+package com.yanivian.connect.backend.aspect;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -11,13 +11,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.yanivian.connect.frontend.dao.DatastoreUtil;
-import com.yanivian.connect.frontend.dao.ImageDao;
-import com.yanivian.connect.frontend.dao.ImageDao.ImageModel;
-import com.yanivian.connect.frontend.dao.ProfileDao;
-import com.yanivian.connect.frontend.dao.ProfileDao.ProfileModel;
-import com.yanivian.connect.frontend.proto.aspect.UserInfo;
-import com.yanivian.connect.frontend.proto.model.Profile;
+import com.yanivian.connect.backend.dao.DatastoreUtil;
+import com.yanivian.connect.backend.dao.ImageDao;
+import com.yanivian.connect.backend.dao.ImageDao.ImageModel;
+import com.yanivian.connect.backend.dao.ProfileDao;
+import com.yanivian.connect.backend.dao.ProfileDao.ProfileModel;
+import com.yanivian.connect.backend.proto.aspect.UserInfo;
+import com.yanivian.connect.backend.proto.model.Profile;
 
 /** Aspect that deals with profile management. */
 public final class ProfilesAspect {
@@ -35,7 +35,11 @@ public final class ProfilesAspect {
 
   public Profile getOrCreateProfile(String userID, String phoneNumber) {
     // User IDs are expected to map 1:1 with phone numbers.
-    Preconditions.checkState(profileDao.findProfilesByPhoneNumber(phoneNumber).isEmpty());
+    ImmutableList<ProfileModel> associatedProfiles =
+        profileDao.findProfilesByPhoneNumber(phoneNumber);
+    Preconditions.checkState(associatedProfiles.size() <= 1
+        && (associatedProfiles.isEmpty() || associatedProfiles.get(0).getID().equals(userID)));
+
     return DatastoreUtil.newTransaction(datastore, txn -> {
       Optional<Profile> profile = getProfile(txn, userID);
       if (profile.isPresent()) {

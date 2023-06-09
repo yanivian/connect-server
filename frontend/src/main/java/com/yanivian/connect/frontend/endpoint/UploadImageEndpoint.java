@@ -12,8 +12,8 @@ import javax.servlet.http.Part;
 import com.google.common.collect.ImmutableSet;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.dao.ImageDao;
-import com.yanivian.connect.frontend.dao.ImageDao.ImageModel;
+import com.yanivian.connect.backend.dao.ImageDao;
+import com.yanivian.connect.backend.dao.ImageDao.ImageModel;
 
 @WebServlet(name = "UploadImageEndpoint", urlPatterns = {"/image/upload"})
 @MultipartConfig(maxFileSize = 10 * 1024 * 1024, // 10MB

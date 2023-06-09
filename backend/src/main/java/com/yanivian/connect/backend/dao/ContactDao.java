@@ -1,4 +1,4 @@
-package com.yanivian.connect.frontend.dao;
+package com.yanivian.connect.backend.dao;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -18,7 +18,7 @@ import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
-import com.yanivian.connect.frontend.proto.model.Contact;
+import com.yanivian.connect.backend.proto.model.Contact;
 
 public final class ContactDao {
 

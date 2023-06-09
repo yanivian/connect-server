@@ -1,4 +1,4 @@
-package com.yanivian.connect.frontend.aspect;
+package com.yanivian.connect.backend.aspect;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -12,17 +12,17 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.yanivian.connect.frontend.aspect.ProfilesAspect.ProfileCache;
-import com.yanivian.connect.frontend.dao.ConnectionDao;
-import com.yanivian.connect.frontend.dao.ConnectionDao.ConnectionModel;
-import com.yanivian.connect.frontend.dao.ContactDao;
-import com.yanivian.connect.frontend.dao.ContactDao.ContactModel;
-import com.yanivian.connect.frontend.dao.DatastoreUtil;
-import com.yanivian.connect.frontend.proto.api.AddConnectionResult;
-import com.yanivian.connect.frontend.proto.aspect.ConnectionsSnapshot;
-import com.yanivian.connect.frontend.proto.aspect.UserInfo;
-import com.yanivian.connect.frontend.proto.model.Connection.ConnectionState;
-import com.yanivian.connect.frontend.proto.model.Contact;
+import com.yanivian.connect.backend.aspect.ProfilesAspect.ProfileCache;
+import com.yanivian.connect.backend.dao.ConnectionDao;
+import com.yanivian.connect.backend.dao.ConnectionDao.ConnectionModel;
+import com.yanivian.connect.backend.dao.ContactDao;
+import com.yanivian.connect.backend.dao.ContactDao.ContactModel;
+import com.yanivian.connect.backend.dao.DatastoreUtil;
+import com.yanivian.connect.backend.proto.aspect.AddConnectionResult;
+import com.yanivian.connect.backend.proto.aspect.ConnectionsSnapshot;
+import com.yanivian.connect.backend.proto.aspect.UserInfo;
+import com.yanivian.connect.backend.proto.model.Connection.ConnectionState;
+import com.yanivian.connect.backend.proto.model.Contact;
 
 /** Aspect that deals with connection management. */
 public final class ConnectionsAspect {

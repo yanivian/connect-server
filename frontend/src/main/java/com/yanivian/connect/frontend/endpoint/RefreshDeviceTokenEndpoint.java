@@ -10,7 +10,7 @@ import com.google.common.base.Preconditions;
 import com.google.protobuf.Empty;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.frontend.aspect.ProfilesAspect;
+import com.yanivian.connect.backend.aspect.ProfilesAspect;
 
 @WebServlet(name = "RefreshDeviceTokenEndpoint", urlPatterns = {"/profile/refreshdevicetoken"})
 @AllowPost

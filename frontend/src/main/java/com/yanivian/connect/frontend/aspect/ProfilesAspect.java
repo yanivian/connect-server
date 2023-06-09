@@ -1,7 +1,9 @@
 package com.yanivian.connect.frontend.aspect;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Transaction;
@@ -80,15 +82,33 @@ public final class ProfilesAspect {
   }
 
   /**
-   * Sets the device token in the profile. Returns {@code false} is a profile couldn't be found.
+   * Sets the device token on the actor's profile. Returns {@code false} if the actor's profile
+   * couldn't be found. Clears the device token on any other profiles associated with it.
    */
-  public boolean setDeviceToken(String userID, Optional<String> deviceToken) {
+  public boolean setDeviceToken(String actorID, Optional<String> deviceToken) {
+    // Determine which users are in scope.
+    Set<String> userIDs = new HashSet<>();
+    if (deviceToken.isPresent()) {
+      profileDao.findProfilesByDeviceToken(deviceToken.get()).stream().map(ProfileModel::getID)
+          .forEach(userIDs::add);
+    }
+    userIDs.add(actorID);
+
     return DatastoreUtil.newTransaction(datastore, txn -> {
-      Optional<ProfileModel> profileModel = profileDao.getProfile(txn, userID);
-      if (!profileModel.isPresent()) {
+      ImmutableMap<String, ProfileModel> profileMap =
+          profileDao.getProfiles(txn, ImmutableSet.copyOf(userIDs));
+      // If the actor doesn't exist, bail.
+      if (!profileMap.containsKey(actorID)) {
         return false;
       }
-      profileModel.get().setDeviceToken(deviceToken).save(txn, datastore);
+      profileMap.values().forEach(profileModel -> {
+        if (profileModel.getID().equals(actorID)) {
+          profileModel.setDeviceToken(deviceToken);
+        } else {
+          profileModel.setDeviceToken(Optional.empty());
+        }
+        profileModel.save(txn, datastore);
+      });
       return true;
     });
   }

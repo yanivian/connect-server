@@ -12,9 +12,9 @@ import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
 import com.yanivian.connect.frontend.aspect.ProfilesAspect;
 
-@WebServlet(name = "SetDeviceTokenEndpoint", urlPatterns = {"/profile/setdevicetoken"})
+@WebServlet(name = "RefreshDeviceTokenEndpoint", urlPatterns = {"/profile/refreshdevicetoken"})
 @AllowPost
-public final class SetDeviceTokenEndpoint extends GuiceEndpoint {
+public final class RefreshDeviceTokenEndpoint extends GuiceEndpoint {
 
   private static final String PARAM_DEVICE_TOKEN = "deviceToken";
 
@@ -24,7 +24,7 @@ public final class SetDeviceTokenEndpoint extends GuiceEndpoint {
   private ProfilesAspect profilesAspect;
 
   // Servlets must have public no-arg constructors.
-  public SetDeviceTokenEndpoint() {}
+  public RefreshDeviceTokenEndpoint() {}
 
   @Override
   protected void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {

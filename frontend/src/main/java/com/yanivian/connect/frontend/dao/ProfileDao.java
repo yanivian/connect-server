@@ -14,9 +14,11 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.appengine.api.datastore.Transaction;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.yanivian.connect.frontend.proto.model.Profile;
 
 public final class ProfileDao {
@@ -47,13 +49,22 @@ public final class ProfileDao {
         entry -> entry.getKey().getName(), entry -> new ProfileModel(entry.getValue())));
   }
 
-  /** Find a profile by their phone number. */
+  /** Find profiles associated with a given phone number. */
   // Cannot be transactional.
-  public Optional<ProfileModel> findProfile(String phoneNumber) {
+  public ImmutableList<ProfileModel> findProfilesByPhoneNumber(String phoneNumber) {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
-    Entity entity = datastore.prepare(query).asSingleEntity();
-    return entity == null ? Optional.empty() : Optional.of(new ProfileModel(entity));
+    return Streams.stream(datastore.prepare(query).asIterable()).map(ProfileModel::new)
+        .collect(ImmutableList.toImmutableList());
+  }
+
+  /** Find profiles associated with a given device token. */
+  // Cannot be transactional.
+  public ImmutableList<ProfileModel> findProfilesByDeviceToken(String deviceToken) {
+    Query query = new Query(ProfileModel.KIND).setFilter(
+        new FilterPredicate(ProfileModel.PROPERTY_DEVICE_TOKEN, FilterOperator.EQUAL, deviceToken));
+    return Streams.stream(datastore.prepare(query).asIterable()).map(ProfileModel::new)
+        .collect(ImmutableList.toImmutableList());
   }
 
   /** Creates, saves and returns a new profile. */

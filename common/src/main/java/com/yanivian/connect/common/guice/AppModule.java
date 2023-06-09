@@ -15,6 +15,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
@@ -53,6 +54,12 @@ public class AppModule extends AbstractModule {
   @Singleton
   FirebaseAuth provideFirebaseAuth(FirebaseApp app) {
     return FirebaseAuth.getInstance(app);
+  }
+
+  @Provides
+  @Singleton
+  FirebaseMessaging providFirebaseMessaging(FirebaseApp app) {
+    return FirebaseMessaging.getInstance(app);
   }
 
   @Provides

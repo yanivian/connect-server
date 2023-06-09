@@ -7,6 +7,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Transaction;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -33,6 +34,8 @@ public final class ProfilesAspect {
   }
 
   public Profile getOrCreateProfile(String userID, String phoneNumber) {
+    // User IDs are expected to map 1:1 with phone numbers.
+    Preconditions.checkState(profileDao.findProfilesByPhoneNumber(phoneNumber).isEmpty());
     return DatastoreUtil.newTransaction(datastore, txn -> {
       Optional<Profile> profile = getProfile(txn, userID);
       if (profile.isPresent()) {

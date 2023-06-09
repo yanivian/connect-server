@@ -30,7 +30,7 @@ public final class ProfileDao {
     this.clock = clock;
   }
 
-  public Optional<ProfileModel> getProfileByUserId(Transaction txn, String userID) {
+  public Optional<ProfileModel> getProfile(Transaction txn, String userID) {
     try {
       Entity entity = datastore.get(txn, toKey(userID));
       return Optional.of(new ProfileModel(entity));
@@ -39,7 +39,7 @@ public final class ProfileDao {
     }
   }
 
-  public ImmutableMap<String, ProfileModel> getProfilesByUserId(Transaction txn,
+  public ImmutableMap<String, ProfileModel> getProfiles(Transaction txn,
       ImmutableSet<String> userIDs) {
     Map<Key, Entity> entityMap =
         datastore.get(txn, Iterables.transform(userIDs, ProfileDao::toKey));
@@ -47,8 +47,9 @@ public final class ProfileDao {
         entry -> entry.getKey().getName(), entry -> new ProfileModel(entry.getValue())));
   }
 
+  /** Find a profile by their phone number. */
   // Cannot be transactional.
-  public Optional<ProfileModel> getProfileByPhoneNumber(String phoneNumber) {
+  public Optional<ProfileModel> findProfile(String phoneNumber) {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
     Entity entity = datastore.prepare(query).asSingleEntity();
@@ -72,6 +73,7 @@ public final class ProfileDao {
     private static final String PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS =
         "LastUpdatedTimestampMillis";
     private static final String PROPERTY_IMAGE = "Image";
+    private static final String PROPERTY_DEVICE_TOKEN = "DeviceToken";
 
     private ProfileModel(Entity entity) {
       super(entity);
@@ -143,6 +145,19 @@ public final class ProfileDao {
 
     public Optional<String> getImage() {
       return getOptionalProperty(PROPERTY_IMAGE);
+    }
+
+    public ProfileModel setDeviceToken(Optional<String> deviceToken) {
+      if (deviceToken.isPresent()) {
+        entity.setProperty(PROPERTY_DEVICE_TOKEN, deviceToken.get());
+      } else {
+        entity.removeProperty(PROPERTY_DEVICE_TOKEN);
+      }
+      return this;
+    }
+
+    public Optional<String> getDeviceToken() {
+      return getOptionalProperty(PROPERTY_DEVICE_TOKEN);
     }
 
     public ProfileModel setLastUpdatedTimestampMillis(long timestampMillis) {

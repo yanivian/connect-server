@@ -41,7 +41,7 @@ public final class ProfilesAspect {
   }
 
   private Optional<Profile> getProfile(Transaction txn, String ownerUserID) {
-    Optional<ProfileModel> profileModel = profileDao.getProfileByUserId(txn, ownerUserID);
+    Optional<ProfileModel> profileModel = profileDao.getProfile(txn, ownerUserID);
     if (!profileModel.isPresent()) {
       return Optional.empty();
     }
@@ -62,10 +62,14 @@ public final class ProfilesAspect {
     return getProfiles(ImmutableList.of(userID)).getProfile(userID);
   }
 
+  /**
+   * Updates a profile. Each field is provided as an optional where a missing value indicates the
+   * field will be cleared.
+   */
   public Optional<Profile> updateProfile(String userID, Optional<String> name,
       Optional<String> emailAddress, Optional<String> imageID) {
     return DatastoreUtil.newTransaction(datastore, txn -> {
-      Optional<ProfileModel> optionalProfileModel = profileDao.getProfileByUserId(txn, userID);
+      Optional<ProfileModel> optionalProfileModel = profileDao.getProfile(txn, userID);
       if (!optionalProfileModel.isPresent()) {
         return Optional.empty();
       }
@@ -75,10 +79,24 @@ public final class ProfilesAspect {
     });
   }
 
+  /**
+   * Sets the device token in the profile. Returns {@code false} is a profile couldn't be found.
+   */
+  public boolean setDeviceToken(String userID, Optional<String> deviceToken) {
+    return DatastoreUtil.newTransaction(datastore, txn -> {
+      Optional<ProfileModel> profileModel = profileDao.getProfile(txn, userID);
+      if (!profileModel.isPresent()) {
+        return false;
+      }
+      profileModel.get().setDeviceToken(deviceToken).save(txn, datastore);
+      return true;
+    });
+  }
+
   public ProfileCache getProfiles(Collection<String> userIDs) {
     return DatastoreUtil.newTransaction(datastore, txn -> {
       ImmutableMap<String, ProfileModel> profileModels =
-          profileDao.getProfilesByUserId(txn, ImmutableSet.copyOf(userIDs));
+          profileDao.getProfiles(txn, ImmutableSet.copyOf(userIDs));
 
       ImmutableSet<String> profileImageIDs =
           profileModels.values().stream().map(ProfileModel::getImage).filter(Optional::isPresent)

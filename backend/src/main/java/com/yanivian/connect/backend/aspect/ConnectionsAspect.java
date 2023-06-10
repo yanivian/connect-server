@@ -18,7 +18,7 @@ import com.yanivian.connect.backend.dao.ConnectionDao.ConnectionModel;
 import com.yanivian.connect.backend.dao.ContactDao;
 import com.yanivian.connect.backend.dao.ContactDao.ContactModel;
 import com.yanivian.connect.backend.dao.DatastoreUtil;
-import com.yanivian.connect.backend.proto.aspect.AddConnectionResult;
+import com.yanivian.connect.backend.proto.aspect.ConnectionAddedResult;
 import com.yanivian.connect.backend.proto.aspect.ConnectionsSnapshot;
 import com.yanivian.connect.backend.proto.aspect.UserInfo;
 import com.yanivian.connect.backend.proto.model.Connection.ConnectionState;
@@ -46,12 +46,12 @@ public final class ConnectionsAspect {
     this.asyncTaskQueue = asyncTaskQueue;
   }
 
-  public AddConnectionResult addConnection(String actorUserID, String targetUserID) {
+  public ConnectionAddedResult addConnection(String actorUserID, String targetUserID) {
     ConnectionModel connectionModel = addConnectionInternal(actorUserID, targetUserID);
     boolean isConnected = connectionModel.getState().equals(ConnectionState.CONNECTED);
     UserInfo userInfo = profilesAspect.getProfiles(ImmutableList.of(targetUserID))
         .getUser(targetUserID, isConnected).orElseThrow(IllegalStateException::new);
-    return AddConnectionResult.newBuilder().setUser(userInfo).setIsConnected(isConnected).build();
+    return ConnectionAddedResult.newBuilder().setUser(userInfo).setIsConnected(isConnected).build();
   }
 
   private ConnectionModel addConnectionInternal(String actorUserID, String targetUserID) {

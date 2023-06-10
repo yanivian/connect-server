@@ -6,10 +6,10 @@ import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.yanivian.connect.backend.aspect.ConnectionsAspect;
+import com.yanivian.connect.backend.proto.aspect.ConnectionAddedResult;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.backend.aspect.ConnectionsAspect;
-import com.yanivian.connect.backend.proto.aspect.AddConnectionResult;
 
 @WebServlet(name = "AddConnectionEndpoint", urlPatterns = {"/connection/add"})
 @AllowPost
@@ -33,7 +33,7 @@ public final class AddConnectionEndpoint extends GuiceEndpoint {
     }
 
     String targetUserID = getRequiredParameter(req, PARAM_TARGET_USER_ID);
-    AddConnectionResult result = connectionsAspect.addConnection(userID.get(), targetUserID);
+    ConnectionAddedResult result = connectionsAspect.addConnection(userID.get(), targetUserID);
 
     writeJsonResponse(resp, result);
   }

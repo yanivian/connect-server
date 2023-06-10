@@ -10,17 +10,15 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
-import com.google.firebase.messaging.Message;
-import com.google.protobuf.MessageOrBuilder;
 import com.yanivian.connect.backend.aspect.ProfilesAspect;
 import com.yanivian.connect.backend.aspect.ProfilesAspect.ProfileCache;
 import com.yanivian.connect.backend.dao.ConnectionDao;
-import com.yanivian.connect.backend.proto.aspect.AddConnectionResult;
+import com.yanivian.connect.backend.proto.aspect.ConnectionAddedResult;
 import com.yanivian.connect.backend.proto.aspect.UserInfo;
 import com.yanivian.connect.backend.proto.model.Connection.ConnectionState;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.common.util.TextProtoUtils;
+import com.yanivian.connect.common.util.FirebaseMessagingUtils;
 
 @WebServlet(name = "ConnectionAddedEndpoint", urlPatterns = {"/connection/added"})
 @AllowPost
@@ -53,20 +51,15 @@ public final class ConnectionAddedEndpoint extends GuiceEndpoint {
     Optional<String> deviceToken = profileCache.getDeviceToken(ownerUserID);
     Optional<UserInfo> targetUser = profileCache.getUser(targetUserID, isConnected);
     if (deviceToken.isPresent() && targetUser.isPresent()) {
-      AddConnectionResult payload =
-          AddConnectionResult.newBuilder().setUser(targetUser.get()).setIsConnected(true).build();
+      ConnectionAddedResult payload = ConnectionAddedResult.newBuilder().setUser(targetUser.get())
+          .setIsConnected(isConnected).build();
       try {
-        String messageID = firebaseMessaging.send(toMessage(deviceToken.get(), payload));
+        String messageID = firebaseMessaging.send(
+            FirebaseMessagingUtils.createMessage(deviceToken.get(), "ConnectionAdded", payload));
         logger.atInfo().log("Notified connection added: {}", messageID);
       } catch (FirebaseMessagingException fme) {
         logger.atError().withThrowable(fme).log("Failed to notify connection added.");
       }
     }
-  }
-
-  private <T extends MessageOrBuilder> Message toMessage(String deviceToken, T payload)
-      throws IOException {
-    return Message.builder().setToken(deviceToken)
-        .putData("ConnectionAdded", TextProtoUtils.encodeToString(payload)).build();
   }
 }

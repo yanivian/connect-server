@@ -23,6 +23,7 @@ import com.yanivian.connect.backend.proto.aspect.ConnectionsSnapshot;
 import com.yanivian.connect.backend.proto.aspect.UserInfo;
 import com.yanivian.connect.backend.proto.model.Connection.ConnectionState;
 import com.yanivian.connect.backend.proto.model.Contact;
+import com.yanivian.connect.backend.taskqueue.AsyncTaskQueueAdapter;
 
 /** Aspect that deals with connection management. */
 public final class ConnectionsAspect {
@@ -33,14 +34,16 @@ public final class ConnectionsAspect {
   private final ConnectionDao connectionDao;
   private final ContactDao contactDao;
   private final DatastoreService datastore;
+  private final AsyncTaskQueueAdapter asyncTaskQueue;
 
   @Inject
   ConnectionsAspect(ProfilesAspect profilesAspect, ConnectionDao connectionDao,
-      ContactDao contactDao, DatastoreService datastore) {
+      ContactDao contactDao, DatastoreService datastore, AsyncTaskQueueAdapter asyncTaskQueue) {
     this.profilesAspect = profilesAspect;
     this.connectionDao = connectionDao;
     this.contactDao = contactDao;
     this.datastore = datastore;
+    this.asyncTaskQueue = asyncTaskQueue;
   }
 
   public AddConnectionResult addConnection(String actorUserID, String targetUserID) {
@@ -78,6 +81,7 @@ public final class ConnectionsAspect {
         Preconditions.checkState(outgoingConnectionState.equals(ConnectionState.UNDEFINED));
         return DatastoreUtil.newTransaction(datastore, txn -> {
           connectionDao.updateConnection(txn, incomingConnection.get(), ConnectionState.CONNECTED);
+          asyncTaskQueue.notifyConnectionAdded(txn, targetUserID, actorUserID);
           return connectionDao.createConnection(txn, actorUserID, targetUserID,
               ConnectionState.CONNECTED);
         });

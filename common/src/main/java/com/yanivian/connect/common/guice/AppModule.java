@@ -8,6 +8,8 @@ import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.images.ImagesService;
 import com.google.appengine.api.images.ImagesServiceFactory;
+import com.google.appengine.api.taskqueue.Queue;
+import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.appengine.tools.cloudstorage.RetryParams;
@@ -18,6 +20,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.yanivian.connect.common.guice.BindingAnnotations.AsyncTaskQueue;
 
 public class AppModule extends AbstractModule {
 
@@ -73,5 +76,12 @@ public class AppModule extends AbstractModule {
   @Singleton
   ImagesService provideImagesService() {
     return ImagesServiceFactory.getImagesService();
+  }
+
+  @Provides
+  @AsyncTaskQueue
+  @Singleton
+  Queue provideTaskQueue() {
+    return QueueFactory.getQueue("async");
   }
 }

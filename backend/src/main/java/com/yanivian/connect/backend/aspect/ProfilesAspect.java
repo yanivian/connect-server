@@ -67,6 +67,12 @@ public final class ProfilesAspect {
     return profile;
   }
 
+  public Optional<String> getDeviceToken(String ownerUserID) {
+    return DatastoreUtil.newTransaction(datastore, txn -> {
+      return profileDao.getProfile(txn, ownerUserID).flatMap(ProfileModel::getDeviceToken);
+    });
+  }
+
   public Optional<Profile> getProfile(String userID) {
     return getProfiles(ImmutableList.of(userID)).getProfile(userID);
   }
@@ -163,6 +169,14 @@ public final class ProfilesAspect {
         }
       });
       return Optional.of(profile.build());
+    }
+
+    public Optional<String> getDeviceToken(String userID) {
+      ProfileModel profileModel = profileModels.get(userID);
+      if (profileModel == null) {
+        return Optional.empty();
+      }
+      return profileModel.getDeviceToken();
     }
 
     public ImmutableList<UserInfo> getUsers(Collection<String> userIDs, boolean isConnected) {

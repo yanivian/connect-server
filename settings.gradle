@@ -1,4 +1,5 @@
 rootProject.name = 'connect-server'
+include 'async'
 include 'backend'
 include 'common'
 include 'frontend'

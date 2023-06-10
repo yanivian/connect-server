@@ -1,0 +1,7 @@
+queue:
+- name: async
+  max_concurrent_requests: 100
+  rate: 20/s
+  retry_parameters:
+    task_retry_limit: 0
+  target: async

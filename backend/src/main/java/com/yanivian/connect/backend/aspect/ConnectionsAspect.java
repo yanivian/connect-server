@@ -74,8 +74,17 @@ public final class ConnectionsAspect {
         // Create a new outgoing connection.
         Preconditions.checkState(outgoingConnectionState.equals(ConnectionState.UNDEFINED)
             || outgoingConnectionState.equals(ConnectionState.ASK_TO_CONNECT));
-        return connectionDao.createOrUpdateConnection(actorUserID, targetUserID,
-            ConnectionState.ASK_TO_CONNECT);
+        Optional<ConnectionModel> optionalConnectionModel =
+            connectionDao.findConnection(actorUserID, targetUserID);
+        return DatastoreUtil.newTransaction(datastore, txn -> {
+          asyncTaskQueue.notifyConnectionAdded(txn, targetUserID, actorUserID);
+          if (optionalConnectionModel.isPresent()) {
+            return connectionDao.updateConnection(txn, optionalConnectionModel.get(),
+                ConnectionState.ASK_TO_CONNECT);
+          }
+          return connectionDao.createConnection(txn, actorUserID, targetUserID,
+              ConnectionState.ASK_TO_CONNECT);
+        });
       case ASK_TO_CONNECT:
         // The target user has asked to connect with the actor.
         Preconditions.checkState(outgoingConnectionState.equals(ConnectionState.UNDEFINED));

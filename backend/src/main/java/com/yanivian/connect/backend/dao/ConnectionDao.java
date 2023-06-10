@@ -52,18 +52,6 @@ public final class ConnectionDao {
         datastore);
   }
 
-  /** Creates or updates a connection transactionally. */
-  public ConnectionModel createOrUpdateConnection(String ownerUserID, String targetUserID,
-      ConnectionState state) {
-    Optional<ConnectionModel> optionalConnectionModel = findConnection(ownerUserID, targetUserID);
-    return DatastoreUtil.newTransaction(datastore, txn -> {
-      if (optionalConnectionModel.isPresent()) {
-        return updateConnection(txn, optionalConnectionModel.get(), state);
-      }
-      return createConnection(txn, ownerUserID, targetUserID, state);
-    });
-  }
-
   // Cannot be transactional.
   public Optional<ConnectionModel> findConnection(String ownerUserID, String targetUserID) {
     Query.Filter filter = new Query.CompositeFilter(CompositeFilterOperator.AND,

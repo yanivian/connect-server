@@ -10,6 +10,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 import com.yanivian.connect.backend.aspect.ProfilesAspect;
 import com.yanivian.connect.backend.aspect.ProfilesAspect.ProfileCache;
 import com.yanivian.connect.backend.dao.ConnectionDao;
@@ -18,7 +20,7 @@ import com.yanivian.connect.backend.proto.aspect.UserInfo;
 import com.yanivian.connect.backend.proto.model.Connection.ConnectionState;
 import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
-import com.yanivian.connect.common.util.FirebaseMessagingUtils;
+import com.yanivian.connect.common.util.FirebaseMessageBuilder;
 
 @WebServlet(name = "ConnectionAddedEndpoint", urlPatterns = {"/connection/added"})
 @AllowPost
@@ -50,12 +52,21 @@ public final class ConnectionAddedEndpoint extends GuiceEndpoint {
         profilesAspect.getProfiles(ImmutableList.of(ownerUserID, targetUserID));
     Optional<String> deviceToken = profileCache.getDeviceToken(ownerUserID);
     Optional<UserInfo> targetUser = profileCache.getUser(targetUserID, isConnected);
-    if (deviceToken.isPresent() && targetUser.isPresent()) {
+    if (deviceToken.isPresent() && targetUser.isPresent() && targetUser.get().hasName()) {
+      Notification.Builder notification =
+          Notification.builder().setTitle(isConnected ? "Connected" : "Connection request")
+              .setBody(String.format(
+                  isConnected ? "You are now connected with %s." : "%s wants to connect with you.",
+                  targetUser.get().getName()));
+      if (targetUser.get().hasImage()) {
+        notification.setImage(targetUser.get().getImage().getURL());
+      }
       ConnectionAddedResult payload = ConnectionAddedResult.newBuilder().setUser(targetUser.get())
           .setIsConnected(isConnected).build();
+      Message message = FirebaseMessageBuilder.newMessage(deviceToken.get())
+          .withNotification(notification.build()).withData("ConnectionAdded", payload).build();
       try {
-        String messageID = firebaseMessaging.send(
-            FirebaseMessagingUtils.createMessage(deviceToken.get(), "ConnectionAdded", payload));
+        String messageID = firebaseMessaging.send(message);
         logger.atInfo().log("Notified connection added: {}", messageID);
       } catch (FirebaseMessagingException fme) {
         logger.atError().withThrowable(fme).log("Failed to notify connection added.");

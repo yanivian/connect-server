@@ -24,6 +24,7 @@ message LoginContext {
 
 message SyncDeviceContactsRequest {
   repeated string PhoneNumbers = 1;
+  repeated string UserIDs = 2;
 }
 
 message SyncDeviceContactsResult {

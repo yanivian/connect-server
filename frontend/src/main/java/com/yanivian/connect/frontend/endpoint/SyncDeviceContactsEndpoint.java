@@ -35,12 +35,23 @@ public final class SyncDeviceContactsEndpoint extends GuiceEndpoint {
       return;
     }
 
-    ImmutableSet<String> phoneNumbers = ImmutableSet
-        .copyOf(parseJson(getRequiredParameter(req, PARAM_REQUEST), SyncDeviceContactsRequest.class)
-            .getPhoneNumbersList());
-    ProfileCache profileCache = profilesAspect.getProfilesByPhoneNumber(phoneNumbers);
-    SyncDeviceContactsResult result = SyncDeviceContactsResult.newBuilder()
-        .addAllUsers(profileCache.getUsers(phoneNumbers, true)).build();
+    SyncDeviceContactsRequest syncReq =
+        parseJson(getRequiredParameter(req, PARAM_REQUEST), SyncDeviceContactsRequest.class);
+    SyncDeviceContactsResult.Builder result = SyncDeviceContactsResult.newBuilder();
+
+    if (syncReq.getPhoneNumbersCount() > 0) {
+      ProfileCache profileCache = profilesAspect
+          .getProfilesByPhoneNumber(ImmutableSet.copyOf(syncReq.getPhoneNumbersList()));
+      result.addAllUsers(profileCache.getAllUsers(true)).build();
+    }
+
+
+    if (syncReq.getUserIDsCount() > 0) {
+      ProfileCache profileCache =
+          profilesAspect.getProfiles(ImmutableSet.copyOf(syncReq.getUserIDsList()));
+      result.addAllUsers(profileCache.getAllUsers(true)).build();
+    }
+
     writeJsonResponse(resp, result);
   }
 }

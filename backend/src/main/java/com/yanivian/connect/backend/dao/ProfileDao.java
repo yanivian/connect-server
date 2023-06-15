@@ -1,6 +1,7 @@
 package com.yanivian.connect.backend.dao;
 
 import java.time.Clock;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -51,7 +52,7 @@ public final class ProfileDao {
 
   /** Find profiles associated with the given phone numbers. */
   // Cannot be transactional.
-  public ImmutableList<ProfileModel> findProfilesByPhoneNumber(ImmutableSet<String> phoneNumbers) {
+  public ImmutableList<ProfileModel> findProfilesByPhoneNumber(Collection<String> phoneNumbers) {
     Query query = new Query(ProfileModel.KIND).setFilter(
         new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.IN, phoneNumbers));
     return Streams.stream(datastore.prepare(query).asIterable()).map(ProfileModel::new)

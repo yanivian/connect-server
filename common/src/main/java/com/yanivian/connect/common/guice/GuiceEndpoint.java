@@ -85,6 +85,7 @@ public abstract class GuiceEndpoint extends HttpServlet {
     writer.flush();
   }
 
+  @SuppressWarnings("unchecked")
   protected <T extends Message> T parseJson(String json, Class<T> protoClass)
       throws InvalidProtocolBufferException {
     T.Builder builder = Internal.getDefaultInstance(protoClass).toBuilder();

@@ -140,7 +140,7 @@ public final class ProfilesAspect {
     });
   }
 
-  public ProfileCache getProfilesByPhoneNumber(ImmutableSet<String> phoneNumbers) {
+  public ProfileCache getProfilesByPhoneNumber(Collection<String> phoneNumbers) {
     ImmutableSet<String> userIDs = profileDao.findProfilesByPhoneNumber(phoneNumbers).stream()
         .map(ProfileModel::getID).collect(ImmutableSet.toImmutableSet());
     return getProfiles(userIDs);
@@ -188,6 +188,11 @@ public final class ProfilesAspect {
     public ImmutableList<UserInfo> getUsers(Collection<String> userIDs, boolean isConnected) {
       return userIDs.stream().map(user -> getUser(user, isConnected)).filter(Optional::isPresent)
           .map(Optional::get).collect(ImmutableList.toImmutableList());
+    }
+
+    public ImmutableList<UserInfo> getAllUsers(boolean isConnected) {
+      return profileModels.keySet().stream().map(user -> getUser(user, isConnected))
+          .filter(Optional::isPresent).map(Optional::get).collect(ImmutableList.toImmutableList());
     }
 
     public Optional<UserInfo> getUser(String userID, boolean isConnected) {

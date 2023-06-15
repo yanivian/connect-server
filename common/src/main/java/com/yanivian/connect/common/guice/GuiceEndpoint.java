@@ -16,6 +16,9 @@ import org.apache.logging.log4j.Logger;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.inject.Injector;
+import com.google.protobuf.Internal;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Message;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
 import com.yanivian.connect.common.util.TextProtoUtils;
@@ -80,6 +83,13 @@ public abstract class GuiceEndpoint extends HttpServlet {
     PrintWriter writer = response.getWriter();
     writer.print(json);
     writer.flush();
+  }
+
+  protected <T extends Message> T parseJson(String json, Class<T> protoClass)
+      throws InvalidProtocolBufferException {
+    T.Builder builder = Internal.getDefaultInstance(protoClass).toBuilder();
+    JsonFormat.parser().merge(json, builder);
+    return (T) builder.build();
   }
 
   /** Writes a protobuf messages as a raw/protobuf response. */

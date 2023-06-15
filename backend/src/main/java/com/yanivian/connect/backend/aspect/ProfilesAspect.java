@@ -36,7 +36,7 @@ public final class ProfilesAspect {
   public Profile getOrCreateProfile(String userID, String phoneNumber) {
     // User IDs are expected to map 1:1 with phone numbers.
     ImmutableList<ProfileModel> associatedProfiles =
-        profileDao.findProfilesByPhoneNumber(phoneNumber);
+        profileDao.findProfilesByPhoneNumber(ImmutableSet.of(phoneNumber));
     Preconditions.checkState(associatedProfiles.size() <= 1
         && (associatedProfiles.isEmpty() || associatedProfiles.get(0).getID().equals(userID)));
 
@@ -138,6 +138,12 @@ public final class ProfilesAspect {
 
       return new ProfileCache(profileModels, profileImages);
     });
+  }
+
+  public ProfileCache getProfilesByPhoneNumber(ImmutableSet<String> phoneNumbers) {
+    ImmutableSet<String> userIDs = profileDao.findProfilesByPhoneNumber(phoneNumbers).stream()
+        .map(ProfileModel::getID).collect(ImmutableSet.toImmutableSet());
+    return getProfiles(userIDs);
   }
 
   public static final class ProfileCache {

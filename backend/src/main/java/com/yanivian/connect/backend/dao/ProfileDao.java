@@ -49,11 +49,11 @@ public final class ProfileDao {
         entry -> entry.getKey().getName(), entry -> new ProfileModel(entry.getValue())));
   }
 
-  /** Find profiles associated with a given phone number. */
+  /** Find profiles associated with the given phone numbers. */
   // Cannot be transactional.
-  public ImmutableList<ProfileModel> findProfilesByPhoneNumber(String phoneNumber) {
+  public ImmutableList<ProfileModel> findProfilesByPhoneNumber(ImmutableSet<String> phoneNumbers) {
     Query query = new Query(ProfileModel.KIND).setFilter(
-        new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.EQUAL, phoneNumber));
+        new FilterPredicate(ProfileModel.PROPERTY_PHONE_NUMBER, FilterOperator.IN, phoneNumbers));
     return Streams.stream(datastore.prepare(query).asIterable()).map(ProfileModel::new)
         .collect(ImmutableList.toImmutableList());
   }

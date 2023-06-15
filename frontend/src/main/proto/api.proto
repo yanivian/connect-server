@@ -21,3 +21,11 @@ message LoginContext {
 
   .backend.aspect.ConnectionsSnapshot ConnectionsSnapshot = 4;
 }
+
+message SyncDeviceContactsRequest {
+  repeated string PhoneNumbers = 1;
+}
+
+message SyncDeviceContactsResult {
+  repeated .backend.aspect.UserInfo Users = 1;
+}

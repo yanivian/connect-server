@@ -7,7 +7,17 @@ To deploy the frontend (default) service, run:
 ./gradlew :frontend:appengineDeploy
 ```
 
-To deploy the Datastore index, run:
+To deploy the async service, run:
+```
+./gradlew :async:appengineDeploy
+```
+
+To deploy the Cloud Datastore indexes, run:
 ```
 ./gradlew :backend:appengineDeployIndex
+```
+
+To deploy Cloud Task queues, run:
+```
+./gradlew :backend:appengineDeployQueue
 ```

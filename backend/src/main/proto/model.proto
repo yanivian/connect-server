@@ -8,22 +8,24 @@ option java_multiple_files = true;
 // A chat with at least one participant.
 message Chat {
   string ID = 1;
+  // Timestamp when the chat was created.
+  int64 CreatedTimestampMillis = 2;
   // IDs of the participating users.
-  repeated string ParticipantUserIDs = 2;
+  repeated string ParticipantUserIDs = 3;
   // Generated key by which a chat can be indexed by the set of participants.
-  string UniqueParticipantsSearchKey = 3;
+  string UniqueParticipantsSearchKey = 4;
   // ID of the most recent message within this chat.
   // Note that message IDs are sequentially generated.
-  int32 MostRecentMessageID = 4;
+  int64 MostRecentMessageID = 5;
   // IDs of participants that are currently typing in #realtime.
-  repeated string TypingUserIDs = 5;
+  repeated string TypingUserIDs = 6;
 }
 
 message ChatMessage {
   string ChatID = 1;
   // Messages within a chat are numbered starting from one and increasing by
   // exactly one for every message that is posted to the chat.
-  int32 MessageID = 2;
+  int64 MessageID = 2;
   // Timestamp when the message was created.
   int64 CreatedTimestampMillis = 3;
   // ID of the user that authored this message.
@@ -36,8 +38,10 @@ message ChatParticipant {
   string ChatID = 1;
   // ID of the user to whom this state applies.
   string UserID = 2;
-  // Most recent message sync timestamp observed as proxy for the user.
-  optional int32 LastObservedMessageID = 3;
+  // Timestamp when the entity was created.
+  int64 CreatedTimestampMillis = 3;
+  // Most recent message ID observed as proxy for the user.
+  optional int64 MostRecentObservedMessageID = 4;
 }
 
 // An uni-directional connection from the connection owner and a target user.

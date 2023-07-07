@@ -5,6 +5,41 @@ package backend.model;
 option java_package = "com.yanivian.connect.backend.proto.model";
 option java_multiple_files = true;
 
+// A chat with at least one participant.
+message Chat {
+  string ID = 1;
+  // IDs of the participating users.
+  repeated string ParticipantUserIDs = 2;
+  // Generated key by which a chat can be indexed by the set of participants.
+  string UniqueParticipantsSearchKey = 3;
+  // ID of the most recent message within this chat.
+  // Note that message IDs are sequentially generated.
+  int32 MostRecentMessageID = 4;
+  // IDs of participants that are currently typing in #realtime.
+  repeated string TypingUserIDs = 5;
+}
+
+message ChatMessage {
+  string ChatID = 1;
+  // Messages within a chat are numbered starting from one and increasing by
+  // exactly one for every message that is posted to the chat.
+  int32 MessageID = 2;
+  // Timestamp when the message was created.
+  int64 CreatedTimestampMillis = 3;
+  // ID of the user that authored this message.
+  string UserID = 4;
+  // Text entered by the user, if any.
+  optional string Text = 5;
+}
+
+message ChatParticipant {
+  string ChatID = 1;
+  // ID of the user to whom this state applies.
+  string UserID = 2;
+  // Most recent message sync timestamp observed as proxy for the user.
+  optional int32 LastObservedMessageID = 3;
+}
+
 // An uni-directional connection from the connection owner and a target user.
 message Connection {
   string ID = 1;

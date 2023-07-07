@@ -154,7 +154,7 @@ public final class ContactDao {
     }
 
     private ContactModel setName(String name) {
-      entity.setProperty(PROPERTY_NAME, name);
+      entity.setUnindexedProperty(PROPERTY_NAME, name);
       return this;
     }
 

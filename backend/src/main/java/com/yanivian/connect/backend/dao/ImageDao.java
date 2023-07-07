@@ -109,7 +109,7 @@ public final class ImageDao {
     }
 
     private ImageModel setURL(String url) {
-      entity.setProperty(PROPERTY_URL, url);
+      entity.setUnindexedProperty(PROPERTY_URL, url);
       return this;
     }
 

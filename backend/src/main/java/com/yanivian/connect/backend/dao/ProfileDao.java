@@ -122,7 +122,7 @@ public final class ProfileDao {
 
     public ProfileModel setName(Optional<String> name) {
       if (name.isPresent()) {
-        entity.setProperty(PROPERTY_NAME, name.get());
+        entity.setUnindexedProperty(PROPERTY_NAME, name.get());
       } else {
         entity.removeProperty(PROPERTY_NAME);
       }
@@ -161,7 +161,7 @@ public final class ProfileDao {
 
     public ProfileModel setDeviceToken(Optional<String> deviceToken) {
       if (deviceToken.isPresent()) {
-        entity.setProperty(PROPERTY_DEVICE_TOKEN, deviceToken.get());
+        entity.setUnindexedProperty(PROPERTY_DEVICE_TOKEN, deviceToken.get());
       } else {
         entity.removeProperty(PROPERTY_DEVICE_TOKEN);
       }

@@ -14,9 +14,9 @@ import com.google.appengine.tools.cloudstorage.GcsOutputChannel;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.common.io.ByteStreams;
 
-public class BlobDao {
+final class BlobDao {
 
-  public enum BlobNamespace {
+  enum BlobNamespace {
     IMAGE("images-connect"),;
 
     private final String bucketName;

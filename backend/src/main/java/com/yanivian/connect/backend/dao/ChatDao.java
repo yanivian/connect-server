@@ -92,7 +92,7 @@ public final class ChatDao {
           .build();
     }
 
-    public ChatModel setCreatedTimestampMillis(long timestampMillis) {
+    private ChatModel setCreatedTimestampMillis(long timestampMillis) {
       entity.setProperty(Columns.CreatedTimestampMillis, timestampMillis);
       return this;
     }
@@ -101,7 +101,7 @@ public final class ChatDao {
       return (long) entity.getProperty(Columns.CreatedTimestampMillis);
     }
 
-    public ChatModel setParticipantUserIDs(Collection<String> participantUserIDs) {
+    private ChatModel setParticipantUserIDs(Collection<String> participantUserIDs) {
       Preconditions.checkState(!participantUserIDs.isEmpty());
       entity.setIndexedProperty(Columns.ParticipantUserIDs, participantUserIDs);
       return this;
@@ -112,12 +112,12 @@ public final class ChatDao {
       return (Collection<String>) entity.getProperty(Columns.ParticipantUserIDs);
     }
 
-    public ChatModel setUniqueParticipantsSearchKey(String key) {
+    private ChatModel setUniqueParticipantsSearchKey(String key) {
       entity.setIndexedProperty(Columns.UniqueParticipantsSearchKey, key);
       return this;
     }
 
-    public String getUniqueParticipantsSearchKey() {
+    String getUniqueParticipantsSearchKey() {
       return (String) entity.getProperty(Columns.UniqueParticipantsSearchKey);
     }
 

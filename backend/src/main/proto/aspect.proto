@@ -7,6 +7,30 @@ import "model.proto";
 option java_package = "com.yanivian.connect.backend.proto.aspect";
 option java_multiple_files = true;
 
+message ChatGistInfo {
+  string ChatID = 1;
+  repeated UserInfo Participants = 2;
+  ChatMessageInfo LatestMessage = 3;
+  optional int64 LastSeenMessageID = 4;
+}
+
+message ChatMessageInfo {
+  int64 MessageID = 1;
+  UserInfo Poster = 2;
+  int64 CreatedTimestampMillis = 3;
+  optional string Text = 4;
+}
+
+message ChatSlice {
+  ChatGistInfo Gist = 1;
+  // Slice of messages, possibly entire, ordered most recent first.
+  repeated ChatMessageInfo Messages = 2;
+}
+
+message ChatsSnapshot {
+  repeated ChatSlice Chats = 1;
+}
+
 message ConnectionAddedResult {
   UserInfo User = 1;
   bool IsConnected = 2;

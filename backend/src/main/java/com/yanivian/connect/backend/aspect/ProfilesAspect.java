@@ -127,17 +127,19 @@ public final class ProfilesAspect {
   }
 
   public ProfileCache getProfiles(Collection<String> userIDs) {
-    return DatastoreUtil.newTransaction(datastore, txn -> {
-      ImmutableMap<String, ProfileModel> profileModels =
-          profileDao.getProfiles(txn, ImmutableSet.copyOf(userIDs));
+    return DatastoreUtil.newTransaction(datastore, txn -> getProfiles(txn, userIDs));
+  }
 
-      ImmutableSet<String> profileImageIDs =
-          profileModels.values().stream().map(ProfileModel::getImage).filter(Optional::isPresent)
-              .map(Optional::get).collect(ImmutableSet.toImmutableSet());
-      ImmutableMap<String, ImageModel> profileImages = imageDao.getImages(txn, profileImageIDs);
+  public ProfileCache getProfiles(Transaction txn, Collection<String> userIDs) {
+    ImmutableMap<String, ProfileModel> profileModels =
+        profileDao.getProfiles(txn, ImmutableSet.copyOf(userIDs));
 
-      return new ProfileCache(profileModels, profileImages);
-    });
+    ImmutableSet<String> profileImageIDs =
+        profileModels.values().stream().map(ProfileModel::getImage).filter(Optional::isPresent)
+            .map(Optional::get).collect(ImmutableSet.toImmutableSet());
+    ImmutableMap<String, ImageModel> profileImages = imageDao.getImages(txn, profileImageIDs);
+
+    return new ProfileCache(profileModels, profileImages);
   }
 
   public ProfileCache getProfilesByPhoneNumber(Collection<String> phoneNumbers) {

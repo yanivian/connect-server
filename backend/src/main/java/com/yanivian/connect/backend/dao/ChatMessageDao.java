@@ -39,7 +39,7 @@ public final class ChatMessageDao {
       String userID, Optional<String> text) {
     Entity entity = new Entity(ChatMessageModel.KIND, messageID, ChatDao.toKey(chatID));
     return new ChatMessageModel(entity).setCreatedTimestampMillis(clock.millis()).setUserID(userID)
-        .save(txn, datastore);
+        .setText(text).save(txn, datastore);
   }
 
   /** Lists messages in a given chat in decreasing order of message ID. */
@@ -91,7 +91,7 @@ public final class ChatMessageDao {
     }
 
     public ChatMessageModel setUserID(String userID) {
-      entity.setUnindexedProperty(Columns.UserID, userID);
+      entity.setProperty(Columns.UserID, userID);
       return this;
     }
 

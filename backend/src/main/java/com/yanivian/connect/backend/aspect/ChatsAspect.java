@@ -85,7 +85,12 @@ public final class ChatsAspect {
     ChatMessageModel message =
         chatMessageDao.createChatMessage(txn, chatID, messageID, userID, text);
 
-    // TODO: Notify other participants.
+    // Notify other participants.
+    for (String participantUserID : chat.getParticipantUserIDs()) {
+      if (!participantUserID.equals(userID)) {
+        asyncTaskQueue.notifyChatMessagePosted(txn, chatID, messageID, participantUserID);
+      }
+    }
 
     // Create or update participant entity.
     Optional<ChatParticipantModel> existingParticipant =
@@ -97,7 +102,12 @@ public final class ChatsAspect {
     return toSlice(txn, chat, participant, ImmutableList.of(message));
   }
 
-  private ChatSlice toSlice(Transaction txn, ChatModel chat, ChatParticipantModel participant,
+  public ChatSlice toSlice(Transaction txn, ChatModel chat, ChatParticipantModel participant,
+      ImmutableList<ChatMessageModel> messages) {
+    return toSlice(getProfileCache(txn, chat, messages), chat, participant, messages);
+  }
+
+  public ProfileCache getProfileCache(Transaction txn, ChatModel chat,
       ImmutableList<ChatMessageModel> messages) {
     Preconditions.checkState(!messages.isEmpty());
 
@@ -105,8 +115,11 @@ public final class ChatsAspect {
     Set<String> allUserIDs = new HashSet<>(chat.getParticipantUserIDs());
     allUserIDs.addAll(chat.getTypingUserIDs());
     messages.stream().map(ChatMessageModel::getUserID).forEach(allUserIDs::add);
-    ProfileCache profileCache = profilesAspect.getProfiles(txn, allUserIDs);
+    return profilesAspect.getProfiles(txn, allUserIDs);
+  }
 
+  public ChatSlice toSlice(ProfileCache profileCache, ChatModel chat,
+      ChatParticipantModel participant, ImmutableList<ChatMessageModel> messages) {
     // Create messages with poster details.
     ImmutableList<ChatMessageInfo> messageInfos = messages.stream().map(message -> {
       ChatMessageInfo.Builder messageInfo =

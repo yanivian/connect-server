@@ -22,4 +22,12 @@ public final class AsyncTaskQueueAdapter {
     return taskQueue.add(txn, TaskOptions.Builder.withMethod(Method.POST).url("/connection/added")
         .param("ownerUserID", ownerUserID).param("targetUserID", targetUserID));
   }
+
+  public TaskHandle notifyChatMessagePosted(Transaction txn, String chatID, long messageID,
+      String targetUserID) {
+    return taskQueue.add(txn,
+        TaskOptions.Builder.withMethod(Method.POST).url("/chat/messageposted")
+            .param("chatID", chatID).param("messageID", Long.toString(messageID))
+            .param("targetUserID", targetUserID));
+  }
 }

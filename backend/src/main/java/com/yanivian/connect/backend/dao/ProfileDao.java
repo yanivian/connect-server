@@ -161,7 +161,7 @@ public final class ProfileDao {
 
     public ProfileModel setDeviceToken(Optional<String> deviceToken) {
       if (deviceToken.isPresent()) {
-        entity.setUnindexedProperty(PROPERTY_DEVICE_TOKEN, deviceToken.get());
+        entity.setIndexedProperty(PROPERTY_DEVICE_TOKEN, deviceToken.get());
       } else {
         entity.removeProperty(PROPERTY_DEVICE_TOKEN);
       }

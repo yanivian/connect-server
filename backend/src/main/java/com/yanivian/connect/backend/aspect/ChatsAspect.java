@@ -44,6 +44,19 @@ public final class ChatsAspect {
     this.asyncTaskQueue = asyncTaskQueue;
   }
 
+  public ChatSlice listChatMessages(String chatID, String userID) {
+    return DatastoreUtil.newTransaction(datastore, txn -> {
+      ChatModel chat = chatDao.getChat(txn, chatID).orElseThrow(IllegalStateException::new);
+      ImmutableList<ChatMessageModel> messages = chatMessageDao.listChatMessages(txn, chatID);
+      // A chat must have at least one message.
+      long mostRecentMessageID = messages.stream().mapToLong(ChatMessageModel::getMessageID).max()
+          .orElseThrow(IllegalStateException::new);
+      ChatParticipantModel participant =
+          createOrUpdateParticipant(txn, userID, chatID, mostRecentMessageID);
+      return toSlice(txn, chat, participant, messages);
+    });
+  }
+
   public ChatSlice postMessageToUser(String userID, String targetUserID, Optional<String> text) {
     ImmutableSet<String> participantUserIDs = ImmutableSet.of(userID, targetUserID);
     Optional<String> optionalChatID =
@@ -53,6 +66,7 @@ public final class ChatsAspect {
       ChatModel chat;
       if (optionalChatID.isPresent()) {
         chat = chatDao.getChat(txn, optionalChatID.get()).orElseThrow(IllegalStateException::new);
+        Preconditions.checkState(chat.getParticipantUserIDs().contains(userID));
         chat.setMostRecentMessageID(chat.getMostRecentMessageID() + 1).save(txn, datastore);
       } else {
         chat = chatDao.createChat(txn, participantUserIDs);
@@ -67,6 +81,7 @@ public final class ChatsAspect {
     return DatastoreUtil.newTransaction(datastore, txn -> {
       // Update chat entity.
       ChatModel chat = chatDao.getChat(txn, chatID).orElseThrow(IllegalStateException::new);
+      Preconditions.checkState(chat.getParticipantUserIDs().contains(userID));
       chat.setMostRecentMessageID(chat.getMostRecentMessageID() + 1).save(txn, datastore);
 
       // Post message within the chat.
@@ -93,13 +108,20 @@ public final class ChatsAspect {
     }
 
     // Create or update participant entity.
+    ChatParticipantModel participant = createOrUpdateParticipant(txn, userID, chatID, messageID);
+
+    return toSlice(txn, chat, participant, ImmutableList.of(message));
+  }
+
+  private ChatParticipantModel createOrUpdateParticipant(Transaction txn, String userID,
+      String chatID, long mostRecentMessageID) {
     Optional<ChatParticipantModel> existingParticipant =
         chatParticipantDao.getChatParticipant(txn, chatID, userID);
     ChatParticipantModel participant = existingParticipant.isPresent()
-        ? existingParticipant.get().setMostRecentObservedMessageID(messageID).save(txn, datastore)
-        : chatParticipantDao.createChatParticipant(txn, chatID, userID, messageID);
-
-    return toSlice(txn, chat, participant, ImmutableList.of(message));
+        ? existingParticipant.get().setMostRecentObservedMessageID(mostRecentMessageID).save(txn,
+            datastore)
+        : chatParticipantDao.createChatParticipant(txn, chatID, userID, mostRecentMessageID);
+    return participant;
   }
 
   public ChatSlice toSlice(Transaction txn, ChatModel chat, ChatParticipantModel participant,

@@ -42,12 +42,11 @@ public final class ChatMessageDao {
         .save(txn, datastore);
   }
 
-  /** Lists messages in a given chat. */
-  // Cannot be transactional.
-  public ImmutableList<ChatMessageModel> listChatMessages(String chatID) {
+  /** Lists messages in a given chat in decreasing order of message ID. */
+  public ImmutableList<ChatMessageModel> listChatMessages(Transaction txn, String chatID) {
     Query query = new Query(ChatMessageModel.KIND).setAncestor(ChatDao.toKey(chatID))
         .addSort("__key__", SortDirection.DESCENDING);
-    return Streams.stream(datastore.prepare(query).asIterable()).map(ChatMessageModel::new)
+    return Streams.stream(datastore.prepare(txn, query).asIterable()).map(ChatMessageModel::new)
         .collect(ImmutableList.toImmutableList());
   }
 

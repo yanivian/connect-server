@@ -1,7 +1,9 @@
 package com.yanivian.connect.async.endpoint;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +15,7 @@ import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import com.yanivian.connect.backend.aspect.ChatsAspect;
+import com.yanivian.connect.backend.aspect.ProfilesAspect;
 import com.yanivian.connect.backend.aspect.ProfilesAspect.ProfileCache;
 import com.yanivian.connect.backend.dao.ChatDao;
 import com.yanivian.connect.backend.dao.ChatDao.ChatModel;
@@ -37,6 +40,8 @@ public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
 
   @Inject
   private ChatsAspect chatsAspect;
+  @Inject
+  private ProfilesAspect profilesAspect;
   @Inject
   private ChatDao chatDao;
   @Inject
@@ -68,8 +73,12 @@ public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
         logger.atError().log("Chat message not found: chatID={} messageID={}", chatID, messageID);
         return false;
       }
-      ProfileCache profileCache =
-          chatsAspect.getProfileCache(txn, chat.get(), ImmutableList.of(message.get()));
+
+      // Fetch profiles.
+      Set<String> allUserIDs = new HashSet<>(chat.get().getParticipantUserIDs());
+      allUserIDs.add(message.get().getUserID());
+      ProfileCache profileCache = profilesAspect.getProfiles(txn, allUserIDs);
+
       Optional<String> deviceToken = profileCache.getDeviceToken(targetUserID);
       if (!deviceToken.isPresent()) {
         logger.atInfo().log("No device token: targetUserID={}", targetUserID);

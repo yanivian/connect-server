@@ -19,7 +19,8 @@ message LoginContext {
   }
   CredentialsContainer Credentials = 3;
 
-  .backend.aspect.ConnectionsSnapshot ConnectionsSnapshot = 4;
+  .backend.aspect.ChatsSnapshot ChatsSnapshot = 4;
+  .backend.aspect.ConnectionsSnapshot ConnectionsSnapshot = 5;
 }
 
 message SyncDeviceContactsRequest {

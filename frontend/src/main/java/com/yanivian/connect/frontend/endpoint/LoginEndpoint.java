@@ -8,12 +8,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.yanivian.connect.common.guice.GuiceEndpoint;
-import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
+import com.yanivian.connect.backend.aspect.ChatsAspect;
 import com.yanivian.connect.backend.aspect.ConnectionsAspect;
 import com.yanivian.connect.backend.aspect.ProfilesAspect;
-import com.yanivian.connect.frontend.proto.api.LoginContext;
 import com.yanivian.connect.backend.proto.model.Profile;
+import com.yanivian.connect.common.guice.GuiceEndpoint;
+import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
+import com.yanivian.connect.frontend.proto.api.LoginContext;
 
 /**
  * Provides {@link LoginContext} to clients. This includes the following:
@@ -34,6 +35,8 @@ public final class LoginEndpoint extends GuiceEndpoint {
   private ProfilesAspect profilesAspect;
   @Inject
   private ConnectionsAspect connectionsAspect;
+  @Inject
+  private ChatsAspect chatsAspect;
 
   // Servlets must have public no-arg constructors.
   public LoginEndpoint() {}
@@ -62,6 +65,9 @@ public final class LoginEndpoint extends GuiceEndpoint {
 
     // Connections
     loginContext.setConnectionsSnapshot(connectionsAspect.getSnapshot(userID, phoneNumber));
+
+    // Chats
+    loginContext.setChatsSnapshot(chatsAspect.getSnapshot(userID));
 
     writeJsonResponse(resp, loginContext.build());
   }

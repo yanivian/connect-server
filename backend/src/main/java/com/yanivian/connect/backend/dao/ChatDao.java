@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
@@ -17,7 +18,9 @@ import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Query.FilterPredicate;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.yanivian.connect.backend.proto.model.Chat;
@@ -40,6 +43,14 @@ public final class ChatDao {
     } catch (EntityNotFoundException enfe) {
       return Optional.empty();
     }
+  }
+
+  public ImmutableMap<String, ChatModel> getChats(Transaction txn,
+      ImmutableCollection<String> chatIDs) {
+    ImmutableList<Key> entityKeys =
+        chatIDs.stream().map(ChatDao::toKey).distinct().collect(ImmutableList.toImmutableList());
+    return datastore.get(txn, entityKeys).values().stream().map(ChatModel::new)
+        .collect(ImmutableMap.toImmutableMap(ChatModel::getID, Function.identity()));
   }
 
   public ChatModel createChat(Transaction txn, ImmutableSet<String> participantUserIDs) {

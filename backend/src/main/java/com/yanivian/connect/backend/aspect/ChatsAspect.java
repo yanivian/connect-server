@@ -3,10 +3,12 @@ package com.yanivian.connect.backend.aspect;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yanivian.connect.backend.aspect.ProfilesAspect.ProfileCache;
@@ -20,6 +22,9 @@ import com.yanivian.connect.backend.dao.DatastoreUtil;
 import com.yanivian.connect.backend.proto.aspect.ChatGistInfo;
 import com.yanivian.connect.backend.proto.aspect.ChatMessageInfo;
 import com.yanivian.connect.backend.proto.aspect.ChatSlice;
+import com.yanivian.connect.backend.proto.aspect.ChatsSnapshot;
+import com.yanivian.connect.backend.proto.key.ChatMessageKey;
+import com.yanivian.connect.backend.proto.key.ChatParticipantKey;
 import com.yanivian.connect.backend.taskqueue.AsyncTaskQueueAdapter;
 
 /** Aspect that deals with chat. */
@@ -42,6 +47,49 @@ public final class ChatsAspect {
     this.profilesAspect = profilesAspect;
     this.datastore = datastore;
     this.asyncTaskQueue = asyncTaskQueue;
+  }
+
+  public ChatsSnapshot getSnapshot(String userID) {
+    // List all applicable chats, which cannot be within a transaction.
+    ImmutableList<ChatModel> chats = chatDao.listChatsByParticipant(userID);
+    ImmutableList<String> chatIDs =
+        chats.stream().map(ChatModel::getID).collect(ImmutableList.toImmutableList());
+
+    return DatastoreUtil.newTransaction(datastore, txn -> {
+      // Fetch chats, most recent messages and participants transactionally.
+      ImmutableMap<String, ChatModel> chatsMap = chatDao.getChats(txn, chatIDs);
+      ImmutableMap<String, ChatMessageKey> messageKeysMap = chats.stream()
+          .map(chat -> ChatMessageDao.toChatMessageKey(chat.getID(), chat.getMostRecentMessageID()))
+          .collect(ImmutableMap.toImmutableMap(ChatMessageKey::getChatID, Function.identity()));
+      ImmutableMap<ChatMessageKey, ChatMessageModel> messagesMap =
+          chatMessageDao.getChatMessages(txn, messageKeysMap.values());
+      ImmutableMap<String, ChatParticipantKey> participantKeysMap = chats.stream()
+          .map(chat -> ChatParticipantDao.toChatParticipantKey(chat.getID(), userID))
+          .collect(ImmutableMap.toImmutableMap(ChatParticipantKey::getChatID, Function.identity()));
+      ImmutableMap<ChatParticipantKey, ChatParticipantModel> participantsMap =
+          chatParticipantDao.getChatParticipants(txn, participantKeysMap.values());
+
+      // Fetch profiles transactionally.
+      Set<String> allUserIDs = new HashSet<>();
+      chatsMap.values().forEach(chat -> allUserIDs.addAll(chat.getParticipantUserIDs()));
+      messagesMap.values().forEach(message -> allUserIDs.add(message.getUserID()));
+      allUserIDs.add(userID);
+      ProfileCache profileCache = profilesAspect.getProfiles(txn, allUserIDs);
+
+      // Populate result.
+      ChatsSnapshot.Builder snapshot = ChatsSnapshot.newBuilder();
+      for (String chatID : chatIDs) {
+        ChatModel chat = chatsMap.get(chatID);
+        ChatMessageModel message = messagesMap.get(messageKeysMap.get(chatID));
+        ChatParticipantModel participant = participantsMap.get(participantKeysMap.get(chatID));
+        if (chat == null || message == null) {
+          continue;
+        }
+        snapshot.addChats(toSlice(profileCache, chat, ImmutableList.of(message),
+            Optional.ofNullable(participant)));
+      }
+      return snapshot.build();
+    });
   }
 
   public ChatSlice listChatMessages(String chatID, String userID) {
@@ -126,18 +174,12 @@ public final class ChatsAspect {
 
   public ChatSlice toSlice(Transaction txn, ChatModel chat,
       ImmutableList<ChatMessageModel> messages, Optional<ChatParticipantModel> participant) {
-    return toSlice(getProfileCache(txn, chat, messages), chat, messages, participant);
-  }
-
-  public ProfileCache getProfileCache(Transaction txn, ChatModel chat,
-      ImmutableList<ChatMessageModel> messages) {
-    Preconditions.checkState(!messages.isEmpty());
-
     // Fetch all relevant profiles.
     Set<String> allUserIDs = new HashSet<>(chat.getParticipantUserIDs());
-    allUserIDs.addAll(chat.getTypingUserIDs());
     messages.stream().map(ChatMessageModel::getUserID).forEach(allUserIDs::add);
-    return profilesAspect.getProfiles(txn, allUserIDs);
+
+    ProfileCache profileCache = profilesAspect.getProfiles(txn, allUserIDs);
+    return toSlice(profileCache, chat, messages, participant);
   }
 
   public ChatSlice toSlice(ProfileCache profileCache, ChatModel chat,

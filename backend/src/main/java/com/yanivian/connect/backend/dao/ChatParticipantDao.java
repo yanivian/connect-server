@@ -2,6 +2,7 @@ package com.yanivian.connect.backend.dao;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
@@ -9,6 +10,10 @@ import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Transaction;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.yanivian.connect.backend.proto.key.ChatParticipantKey;
 import com.yanivian.connect.backend.proto.model.ChatParticipant;
 
 public final class ChatParticipantDao {
@@ -30,6 +35,16 @@ public final class ChatParticipantDao {
     } catch (EntityNotFoundException enfe) {
       return Optional.empty();
     }
+  }
+
+  public ImmutableMap<ChatParticipantKey, ChatParticipantModel> getChatParticipants(Transaction txn,
+      ImmutableCollection<ChatParticipantKey> keys) {
+    ImmutableList<Key> entityKeys =
+        keys.stream().map(key -> toKey(key.getChatID(), key.getUserID())).distinct()
+            .collect(ImmutableList.toImmutableList());
+    return datastore.get(txn, entityKeys).values().stream().map(ChatParticipantModel::new)
+        .collect(ImmutableMap.toImmutableMap(ChatParticipantModel::getChatParticipantKey,
+            Function.identity()));
   }
 
   public ChatParticipantModel createChatParticipant(Transaction txn, String chatID, String userID,
@@ -68,6 +83,10 @@ public final class ChatParticipantDao {
       return getID();
     }
 
+    public ChatParticipantKey getChatParticipantKey() {
+      return toChatParticipantKey(getChatID(), getUserID());
+    }
+
     public ChatParticipantModel setCreatedTimestampMillis(long timestampMillis) {
       entity.setProperty(Columns.CreatedTimestampMillis, timestampMillis);
       return this;
@@ -85,6 +104,10 @@ public final class ChatParticipantDao {
     public long getMostRecentObservedMessageID() {
       return (Long) entity.getProperty(Columns.MostRecentObservedMessageID);
     }
+  }
+
+  public static ChatParticipantKey toChatParticipantKey(String chatID, String userID) {
+    return ChatParticipantKey.newBuilder().setChatID(chatID).setUserID(userID).build();
   }
 
   static Key toKey(String chatID, String userID) {

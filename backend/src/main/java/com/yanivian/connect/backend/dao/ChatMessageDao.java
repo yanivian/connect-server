@@ -2,6 +2,7 @@ package com.yanivian.connect.backend.dao;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.function.Function;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
@@ -11,8 +12,11 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.datastore.Transaction;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
+import com.yanivian.connect.backend.proto.key.ChatMessageKey;
 import com.yanivian.connect.backend.proto.model.ChatMessage;
 
 public final class ChatMessageDao {
@@ -33,6 +37,15 @@ public final class ChatMessageDao {
     } catch (EntityNotFoundException enfe) {
       return Optional.empty();
     }
+  }
+
+  public ImmutableMap<ChatMessageKey, ChatMessageModel> getChatMessages(Transaction txn,
+      ImmutableCollection<ChatMessageKey> keys) {
+    ImmutableList<Key> entityKeys =
+        keys.stream().map(key -> toKey(key.getChatID(), key.getMessageID())).distinct()
+            .collect(ImmutableList.toImmutableList());
+    return datastore.get(txn, entityKeys).values().stream().map(ChatMessageModel::new).collect(
+        ImmutableMap.toImmutableMap(ChatMessageModel::getChatMessageKey, Function.identity()));
   }
 
   public ChatMessageModel createChatMessage(Transaction txn, String chatID, long messageID,
@@ -81,6 +94,10 @@ public final class ChatMessageDao {
       return getKey().getId();
     }
 
+    public ChatMessageKey getChatMessageKey() {
+      return toChatMessageKey(getChatID(), getMessageID());
+    }
+
     public ChatMessageModel setCreatedTimestampMillis(long timestampMillis) {
       entity.setProperty(Columns.CreatedTimestampMillis, timestampMillis);
       return this;
@@ -111,6 +128,10 @@ public final class ChatMessageDao {
     public Optional<String> getText() {
       return getOptionalProperty(Columns.Text);
     }
+  }
+
+  public static ChatMessageKey toChatMessageKey(String chatID, long messageID) {
+    return ChatMessageKey.newBuilder().setChatID(chatID).setMessageID(messageID).build();
   }
 
   static Key toKey(String chatID, long messageID) {

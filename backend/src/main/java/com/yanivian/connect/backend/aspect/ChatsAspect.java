@@ -53,7 +53,7 @@ public final class ChatsAspect {
           .orElseThrow(IllegalStateException::new);
       ChatParticipantModel participant =
           createOrUpdateParticipant(txn, userID, chatID, mostRecentMessageID);
-      return toSlice(txn, chat, participant, messages);
+      return toSlice(txn, chat, messages, Optional.of(participant));
     });
   }
 
@@ -110,7 +110,7 @@ public final class ChatsAspect {
     // Create or update participant entity.
     ChatParticipantModel participant = createOrUpdateParticipant(txn, userID, chatID, messageID);
 
-    return toSlice(txn, chat, participant, ImmutableList.of(message));
+    return toSlice(txn, chat, ImmutableList.of(message), Optional.of(participant));
   }
 
   private ChatParticipantModel createOrUpdateParticipant(Transaction txn, String userID,
@@ -124,9 +124,9 @@ public final class ChatsAspect {
     return participant;
   }
 
-  public ChatSlice toSlice(Transaction txn, ChatModel chat, ChatParticipantModel participant,
-      ImmutableList<ChatMessageModel> messages) {
-    return toSlice(getProfileCache(txn, chat, messages), chat, participant, messages);
+  public ChatSlice toSlice(Transaction txn, ChatModel chat,
+      ImmutableList<ChatMessageModel> messages, Optional<ChatParticipantModel> participant) {
+    return toSlice(getProfileCache(txn, chat, messages), chat, messages, participant);
   }
 
   public ProfileCache getProfileCache(Transaction txn, ChatModel chat,
@@ -141,7 +141,7 @@ public final class ChatsAspect {
   }
 
   public ChatSlice toSlice(ProfileCache profileCache, ChatModel chat,
-      ChatParticipantModel participant, ImmutableList<ChatMessageModel> messages) {
+      ImmutableList<ChatMessageModel> messages, Optional<ChatParticipantModel> participant) {
     // Create messages with poster details.
     ImmutableList<ChatMessageInfo> messageInfos = messages.stream().map(message -> {
       ChatMessageInfo.Builder messageInfo =
@@ -155,8 +155,10 @@ public final class ChatsAspect {
     // Create gist with latest message.
     ChatMessageInfo latestMessageInfo = messageInfos.get(0);
     ChatGistInfo.Builder gistInfo =
-        ChatGistInfo.newBuilder().setChatID(chat.getID()).setLatestMessage(latestMessageInfo)
-            .setLastSeenMessageID(participant.getMostRecentObservedMessageID());
+        ChatGistInfo.newBuilder().setChatID(chat.getID()).setLatestMessage(latestMessageInfo);
+    if (participant.isPresent()) {
+      gistInfo.setLastSeenMessageID(participant.get().getMostRecentObservedMessageID());
+    }
     chat.getParticipantUserIDs().forEach(participantUserID -> {
       profileCache.getUser(participantUserID, false).ifPresent(gistInfo::addParticipants);
     });

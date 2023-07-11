@@ -57,29 +57,32 @@ public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
     long messageID = Long.parseLong(getRequiredParameter(req, PARAM_MESSAGE_ID));
     String targetUserID = getRequiredParameter(req, PARAM_TARGET_USER_ID);
 
-    boolean result = DatastoreUtil.newTransaction(datastore, txn -> {
+    DatastoreUtil.newTransaction(datastore, txn -> {
       Optional<ChatModel> chat = chatDao.getChat(txn, chatID);
       if (!chat.isPresent()) {
-        return false;
-      }
-      Optional<ChatParticipantModel> participant =
-          chatParticipantDao.getChatParticipant(txn, chatID, targetUserID);
-      if (!participant.isPresent()) {
+        logger.atError().log("Chat not found: chatID={}", chatID);
         return false;
       }
       Optional<ChatMessageModel> message = chatMessageDao.getChatMessage(txn, chatID, messageID);
       if (!message.isPresent()) {
+        logger.atError().log("Chat message not found: chatID={} messageID={}", chatID, messageID);
         return false;
       }
-      ProfileCache profileCache = chatsAspect.getProfileCache(txn, null, null);
+      ProfileCache profileCache =
+          chatsAspect.getProfileCache(txn, chat.get(), ImmutableList.of(message.get()));
       Optional<String> deviceToken = profileCache.getDeviceToken(targetUserID);
       if (!deviceToken.isPresent()) {
+        logger.atInfo().log("No device token: targetUserID={}", targetUserID);
         return false;
       }
-      Optional<UserInfo> poster = profileCache.getUser(message.get().getUserID(), false);
+      String posterUserID = message.get().getUserID();
+      Optional<UserInfo> poster = profileCache.getUser(posterUserID, false);
       if (!poster.isPresent()) {
+        logger.atError().log("Message poster not found: userID={}", posterUserID);
         return false;
       }
+      Optional<ChatParticipantModel> participant =
+          chatParticipantDao.getChatParticipant(txn, chatID, targetUserID);
 
       Message firebaseMessage;
       try {
@@ -93,8 +96,8 @@ public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
         if (poster.get().hasImage()) {
           notification.setImage(poster.get().getImage().getURL());
         }
-        ChatSlice payload = chatsAspect.toSlice(profileCache, chat.get(), participant.get(),
-            ImmutableList.of(message.get()));
+        ChatSlice payload = chatsAspect.toSlice(profileCache, chat.get(),
+            ImmutableList.of(message.get()), participant);
         firebaseMessage = FirebaseMessageBuilder.newMessage(deviceToken.get())
             .withNotification(notification.build()).withData("ChatMessagePosted", payload).build();
       } catch (IOException ioe) {
@@ -106,11 +109,8 @@ public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
         logger.atInfo().log("Notified chat message posted: {}", firebaseMessageID);
         return true;
       } catch (FirebaseMessagingException fme) {
-        logger.atError().withThrowable(fme).log("Failed to notify chat message posted.");
-        return false;
+        throw new IllegalStateException(fme);
       }
     });
-    logger.atInfo().log("Chat message posted: chatID={} messageID={} targetUserID={} result={}",
-        chatID, messageID, targetUserID, result);
   }
 }

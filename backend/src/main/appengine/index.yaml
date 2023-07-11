@@ -1,5 +1,11 @@
 indexes:
 
+- kind: ChatMessage
+  ancestor: yes
+  properties:
+  - name: __key__
+    direction: desc
+
 - kind: Connection
   properties:
   - name: OwnerUserID

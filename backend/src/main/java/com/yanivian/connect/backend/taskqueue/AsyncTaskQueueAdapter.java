@@ -30,4 +30,9 @@ public final class AsyncTaskQueueAdapter {
             .param("chatID", chatID).param("messageID", Long.toString(messageID))
             .param("targetUserID", targetUserID));
   }
+
+  public TaskHandle notifyChatUpdate(Transaction txn, String chatID, String targetUserID) {
+    return taskQueue.add(txn, TaskOptions.Builder.withMethod(Method.POST).url("/chat/updated")
+        .param("chatID", chatID).param("targetUserID", targetUserID));
+  }
 }

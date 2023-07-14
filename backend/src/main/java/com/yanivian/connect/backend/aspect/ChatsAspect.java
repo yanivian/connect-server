@@ -7,6 +7,7 @@ import java.util.function.Function;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -99,8 +100,8 @@ public final class ChatsAspect {
       // A chat must have at least one message.
       long mostRecentMessageID = messages.stream().mapToLong(ChatMessageModel::getMessageID).max()
           .orElseThrow(IllegalStateException::new);
-      ChatParticipantModel participant =
-          createOrUpdateParticipant(txn, userID, chatID, mostRecentMessageID);
+      ChatParticipantModel participant = chatParticipantDao.getOrNewParticipant(txn, userID, chatID)
+          .setMostRecentObservedMessageID(mostRecentMessageID).save(txn, datastore);
       return toSlice(txn, chat, messages, Optional.of(participant));
     });
   }
@@ -156,20 +157,73 @@ public final class ChatsAspect {
     }
 
     // Create or update participant entity.
-    ChatParticipantModel participant = createOrUpdateParticipant(txn, userID, chatID, messageID);
+    ChatParticipantModel participant = chatParticipantDao.getOrNewParticipant(txn, userID, chatID)
+        .setMostRecentObservedMessageID(messageID).save(txn, datastore);
 
     return toSlice(txn, chat, ImmutableList.of(message), Optional.of(participant));
   }
 
-  private ChatParticipantModel createOrUpdateParticipant(Transaction txn, String userID,
-      String chatID, long mostRecentMessageID) {
-    Optional<ChatParticipantModel> existingParticipant =
-        chatParticipantDao.getChatParticipant(txn, chatID, userID);
-    ChatParticipantModel participant = existingParticipant.isPresent()
-        ? existingParticipant.get().setMostRecentObservedMessageID(mostRecentMessageID).save(txn,
-            datastore)
-        : chatParticipantDao.createChatParticipant(txn, chatID, userID, mostRecentMessageID);
-    return participant;
+  public ChatSlice updateChat(String userID, String chatID, Optional<Long> lastSeenMessageID,
+      Optional<String> draftText) {
+    return DatastoreUtil.newTransaction(datastore, txn -> {
+      // Get chat entity.
+      ChatModel chat = chatDao.getChat(txn, chatID).orElseThrow(IllegalStateException::new);
+
+      // User must be a participant.
+      Preconditions.checkState(chat.getParticipantUserIDs().contains(userID));
+
+      // When provided, last seen message ID must be valid.
+      Preconditions.checkState(!lastSeenMessageID.isPresent() || (lastSeenMessageID.get() > 0
+          && lastSeenMessageID.get() <= chat.getMostRecentMessageID()));
+
+      // Update participant, if needed.
+      ChatParticipantModel participant =
+          chatParticipantDao.getOrNewParticipant(txn, userID, chatID);
+      boolean hasChanged = false;
+      if (lastSeenMessageID.isPresent()) {
+        // Update last seen message ID if it is more recent.
+        if (!participant.getMostRecentObservedMessageID().isPresent()
+            || participant.getMostRecentObservedMessageID().get() < lastSeenMessageID.get()) {
+          participant.setMostRecentObservedMessageID(lastSeenMessageID.get());
+          hasChanged = true;
+        }
+      }
+      if (draftText.isPresent()) {
+        Optional<String> newValue =
+            Strings.isNullOrEmpty(draftText.get()) ? Optional.empty() : draftText;
+        if (!participant.getDraftText().equals(newValue)) {
+          participant.setDraftText(newValue);
+          hasChanged = true;
+        }
+      }
+      if (hasChanged) {
+        participant = participant.save(txn, datastore);
+      }
+
+      // Update chat, if needed.
+      if (chat.getTypingUserIDs().contains(userID) ^ participant.getDraftText().isPresent()) {
+        Set<String> typingUserIDs = new HashSet<>(chat.getTypingUserIDs());
+        if (participant.getDraftText().isPresent()) {
+          typingUserIDs.add(userID);
+        } else {
+          typingUserIDs.remove(userID);
+        }
+        chat = chat.setTypingUserIDs(typingUserIDs).save(txn, datastore);
+        // Notify the other participants.
+        for (String participantUserID : chat.getParticipantUserIDs()) {
+          if (!participantUserID.equals(userID)) {
+            asyncTaskQueue.notifyChatMessagePosted(txn, chatID, chat.getMostRecentMessageID(),
+                participantUserID);
+          }
+        }
+      }
+
+      // Return updated chat slice.
+      ChatMessageModel mostRecentMessage =
+          chatMessageDao.getChatMessage(txn, chatID, chat.getMostRecentMessageID())
+              .orElseThrow(IllegalStateException::new);
+      return toSlice(txn, chat, ImmutableList.of(mostRecentMessage), Optional.of(participant));
+    });
   }
 
   public ChatSlice toSlice(Transaction txn, ChatModel chat,
@@ -198,9 +252,8 @@ public final class ChatsAspect {
     ChatMessageInfo latestMessageInfo = messageInfos.get(0);
     ChatGistInfo.Builder gistInfo =
         ChatGistInfo.newBuilder().setChatID(chat.getID()).setLatestMessage(latestMessageInfo);
-    if (participant.isPresent()) {
-      gistInfo.setLastSeenMessageID(participant.get().getMostRecentObservedMessageID());
-    }
+    participant.flatMap(ChatParticipantModel::getMostRecentObservedMessageID)
+        .ifPresent(gistInfo::setLastSeenMessageID);
     chat.getParticipantUserIDs().forEach(participantUserID -> {
       profileCache.getUser(participantUserID, false).ifPresent(gistInfo::addParticipants);
     });

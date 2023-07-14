@@ -42,6 +42,8 @@ message ChatParticipant {
   int64 CreatedTimestampMillis = 3;
   // Most recent message ID observed as proxy for the user.
   optional int64 MostRecentObservedMessageID = 4;
+  // Draft text entered by the user, if any.
+  optional string DraftText = 5;
 }
 
 // An uni-directional connection from the connection owner and a target user.

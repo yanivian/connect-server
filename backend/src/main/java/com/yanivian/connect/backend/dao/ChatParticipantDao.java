@@ -47,11 +47,13 @@ public final class ChatParticipantDao {
             Function.identity()));
   }
 
-  public ChatParticipantModel createChatParticipant(Transaction txn, String chatID, String userID,
-      long mostRecentObservedMessageID) {
+  public ChatParticipantModel newChatParticipant(String chatID, String userID) {
     Entity entity = new Entity(ChatParticipantModel.KIND, userID, ChatDao.toKey(chatID));
-    return new ChatParticipantModel(entity).setCreatedTimestampMillis(clock.millis())
-        .setMostRecentObservedMessageID(mostRecentObservedMessageID).save(txn, datastore);
+    return new ChatParticipantModel(entity).setCreatedTimestampMillis(clock.millis());
+  }
+
+  public ChatParticipantModel getOrNewParticipant(Transaction txn, String userID, String chatID) {
+    return getChatParticipant(txn, chatID, userID).orElse(newChatParticipant(chatID, userID));
   }
 
   public static final class ChatParticipantModel
@@ -62,6 +64,7 @@ public final class ChatParticipantDao {
     private static final class Columns {
       static final String CreatedTimestampMillis = "CreatedTimestampMillis";
       static final String MostRecentObservedMessageID = "MostRecentObservedMessageID";
+      static final String DraftText = "DraftText";
     }
 
     private ChatParticipantModel(Entity entity) {
@@ -70,9 +73,11 @@ public final class ChatParticipantDao {
 
     @Override
     public ChatParticipant toProto() {
-      return ChatParticipant.newBuilder().setChatID(getChatID()).setUserID(getUserID())
-          .setCreatedTimestampMillis(getCreatedTimestampMillis())
-          .setMostRecentObservedMessageID(getMostRecentObservedMessageID()).build();
+      ChatParticipant.Builder chatParticipant = ChatParticipant.newBuilder().setChatID(getChatID())
+          .setUserID(getUserID()).setCreatedTimestampMillis(getCreatedTimestampMillis());
+      getMostRecentObservedMessageID().ifPresent(chatParticipant::setMostRecentObservedMessageID);
+      getDraftText().ifPresent(chatParticipant::setDraftText);
+      return chatParticipant.build();
     }
 
     public String getChatID() {
@@ -96,13 +101,26 @@ public final class ChatParticipantDao {
       return (long) entity.getProperty(Columns.CreatedTimestampMillis);
     }
 
-    public ChatParticipantModel setMostRecentObservedMessageID(long messageID) {
-      entity.setUnindexedProperty(Columns.MostRecentObservedMessageID, messageID);
+    public ChatParticipantModel setMostRecentObservedMessageID(long value) {
+      entity.setUnindexedProperty(Columns.MostRecentObservedMessageID, value);
       return this;
     }
 
-    public long getMostRecentObservedMessageID() {
-      return (Long) entity.getProperty(Columns.MostRecentObservedMessageID);
+    public Optional<Long> getMostRecentObservedMessageID() {
+      return getOptionalProperty(Columns.MostRecentObservedMessageID);
+    }
+
+    public ChatParticipantModel setDraftText(Optional<String> value) {
+      if (value.isPresent()) {
+        entity.setUnindexedProperty(Columns.DraftText, value.get());
+      } else {
+        entity.removeProperty(Columns.DraftText);
+      }
+      return this;
+    }
+
+    public Optional<String> getDraftText() {
+      return getOptionalProperty(Columns.MostRecentObservedMessageID);
     }
   }
 

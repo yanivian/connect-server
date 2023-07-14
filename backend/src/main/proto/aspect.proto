@@ -12,6 +12,7 @@ message ChatGistInfo {
   repeated UserInfo Participants = 2;
   ChatMessageInfo LatestMessage = 3;
   optional int64 LastSeenMessageID = 4;
+  repeated UserInfo TypingUsers = 5;
 }
 
 message ChatMessageInfo {

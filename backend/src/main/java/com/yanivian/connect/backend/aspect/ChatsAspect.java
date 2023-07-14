@@ -243,7 +243,7 @@ public final class ChatsAspect {
       ChatMessageInfo.Builder messageInfo =
           ChatMessageInfo.newBuilder().setMessageID(message.getMessageID())
               .setCreatedTimestampMillis(message.getCreatedTimestampMillis());
-      profileCache.getUser(message.getUserID(), false).ifPresent(messageInfo::setPoster);
+      profileCache.getUser(message.getUserID(), true).ifPresent(messageInfo::setPoster);
       message.getText().ifPresent(messageInfo::setText);
       return messageInfo.build();
     }).collect(ImmutableList.toImmutableList());
@@ -255,7 +255,10 @@ public final class ChatsAspect {
     participant.flatMap(ChatParticipantModel::getMostRecentObservedMessageID)
         .ifPresent(gistInfo::setLastSeenMessageID);
     chat.getParticipantUserIDs().forEach(participantUserID -> {
-      profileCache.getUser(participantUserID, false).ifPresent(gistInfo::addParticipants);
+      profileCache.getUser(participantUserID, true).ifPresent(gistInfo::addParticipants);
+    });
+    chat.getTypingUserIDs().forEach(typingUserID -> {
+      profileCache.getUser(typingUserID, true).ifPresent(gistInfo::addTypingUsers);
     });
 
     // Create slice.

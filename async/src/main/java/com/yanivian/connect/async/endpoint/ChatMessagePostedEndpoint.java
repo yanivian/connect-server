@@ -30,6 +30,10 @@ import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
 import com.yanivian.connect.common.util.FirebaseMessageBuilder;
 
+/**
+ * Publishes both a device push notification and a 'ChatUpdated' data-only Firebase message when a
+ * chat message is posted.
+ */
 @WebServlet(name = "ChatMessagePostedEndpoint", urlPatterns = {"/chat/messageposted"})
 @AllowPost
 public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
@@ -108,7 +112,7 @@ public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
         ChatSlice payload = chatsAspect.toSlice(profileCache, chat.get(),
             ImmutableList.of(message.get()), participant);
         firebaseMessage = FirebaseMessageBuilder.newMessage(deviceToken.get())
-            .withNotification(notification.build()).withData("ChatMessagePosted", payload).build();
+            .withNotification(notification.build()).withData("ChatUpdated", payload).build();
       } catch (IOException ioe) {
         throw new IllegalStateException(ioe);
       }

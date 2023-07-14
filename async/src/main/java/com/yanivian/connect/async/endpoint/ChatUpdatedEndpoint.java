@@ -29,7 +29,7 @@ import com.yanivian.connect.common.guice.GuiceEndpoint;
 import com.yanivian.connect.common.guice.GuiceEndpoint.AllowPost;
 import com.yanivian.connect.common.util.FirebaseMessageBuilder;
 
-/** Pushes a data-only firebase message when visible chat metadata changes. */
+/** Publishes a 'ChatUpdated' data-only Firebase message to propagate chat updates. */
 @WebServlet(name = "ChatUpdatedEndpoint", urlPatterns = {"/chat/updated"})
 @AllowPost
 public final class ChatUpdatedEndpoint extends GuiceEndpoint {
@@ -98,7 +98,7 @@ public final class ChatUpdatedEndpoint extends GuiceEndpoint {
         ChatSlice payload = chatsAspect.toSlice(profileCache, chat.get(),
             ImmutableList.of(message.get()), participant);
         firebaseMessage = FirebaseMessageBuilder.newMessage(deviceToken.get())
-            .withData("ChatMessagePosted", payload).build();
+            .withData("ChatUpdated", payload).build();
       } catch (IOException ioe) {
         throw new IllegalStateException(ioe);
       }

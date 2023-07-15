@@ -1,11 +1,10 @@
 package com.yanivian.connect.backend.aspect;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
@@ -118,7 +117,8 @@ public final class ChatsAspect {
       if (optionalChatID.isPresent()) {
         chat = chatDao.getChat(txn, optionalChatID.get()).orElseThrow(IllegalStateException::new);
         Preconditions.checkState(chat.getParticipantUserIDs().contains(userID));
-        chat.setMostRecentMessageID(chat.getMostRecentMessageID() + 1).save(txn, datastore);
+        chat.setMostRecentMessageID(chat.getMostRecentMessageID() + 1).removeTypingUserID(userID)
+            .save(txn, datastore);
       } else {
         chat = chatDao.createChat(txn, participantUserIDs);
       }
@@ -133,7 +133,8 @@ public final class ChatsAspect {
       // Update chat entity.
       ChatModel chat = chatDao.getChat(txn, chatID).orElseThrow(IllegalStateException::new);
       Preconditions.checkState(chat.getParticipantUserIDs().contains(userID));
-      chat.setMostRecentMessageID(chat.getMostRecentMessageID() + 1).save(txn, datastore);
+      chat.setMostRecentMessageID(chat.getMostRecentMessageID() + 1).removeTypingUserID(userID)
+          .save(txn, datastore);
 
       // Post message within the chat.
       return postMessage(txn, userID, chat, text);
@@ -160,7 +161,8 @@ public final class ChatsAspect {
 
     // Create or update participant entity.
     ChatParticipantModel participant = chatParticipantDao.getOrNewParticipant(txn, userID, chatID)
-        .setMostRecentObservedMessageID(messageID).save(txn, datastore);
+        .setMostRecentObservedMessageID(messageID).setDraftText(Optional.empty())
+        .save(txn, datastore);
 
     return toSlice(txn, chat, ImmutableList.of(message), Optional.of(participant));
   }
@@ -203,14 +205,14 @@ public final class ChatsAspect {
       }
 
       // Update chat, if needed.
-      Set<String> typingUserIDs = new HashSet<>(chat.getTypingUserIDs());
+      Collection<String> typingUserIDs = chat.getTypingUserIDs();
       if (participant.getDraftText().isPresent()) {
-        typingUserIDs.add(userID);
+        chat.addTypingUserID(userID);
       } else {
-        typingUserIDs.remove(userID);
+        chat.removeTypingUserID(userID);
       }
       if (!chat.getTypingUserIDs().equals(typingUserIDs)) {
-        chat = chat.setTypingUserIDs(typingUserIDs).save(txn, datastore);
+        chat.save(txn, datastore);
 
         // Notify the other participants.
         for (String participantUserID : chat.getParticipantUserIDs()) {

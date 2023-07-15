@@ -3,7 +3,9 @@ package com.yanivian.connect.backend.dao;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -141,7 +143,19 @@ public final class ChatDao {
       return (Long) entity.getProperty(Columns.MostRecentMessageID);
     }
 
-    public ChatModel setTypingUserIDs(Collection<String> typingUserIDs) {
+    public ChatModel addTypingUserID(String userID) {
+      Set<String> typingUserIDs = new HashSet<>(getTypingUserIDs());
+      typingUserIDs.add(userID);
+      return setTypingUserIDs(typingUserIDs);
+    }
+
+    public ChatModel removeTypingUserID(String userID) {
+      Set<String> typingUserIDs = new HashSet<>(getTypingUserIDs());
+      typingUserIDs.remove(userID);
+      return setTypingUserIDs(typingUserIDs);
+    }
+
+    private ChatModel setTypingUserIDs(Collection<String> typingUserIDs) {
       if (typingUserIDs.isEmpty()) {
         entity.removeProperty(Columns.TypingUserIDs);
       } else {

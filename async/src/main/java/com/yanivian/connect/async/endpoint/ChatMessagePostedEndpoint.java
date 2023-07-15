@@ -85,7 +85,7 @@ public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
 
       Optional<String> deviceToken = profileCache.getDeviceToken(targetUserID);
       if (!deviceToken.isPresent()) {
-        logger.atInfo().log("No device token: targetUserID={}", targetUserID);
+        logger.atDebug().log("No device token: targetUserID={}", targetUserID);
         return false;
       }
       String posterUserID = message.get().getUserID();
@@ -119,7 +119,7 @@ public final class ChatMessagePostedEndpoint extends GuiceEndpoint {
 
       try {
         String firebaseMessageID = firebaseMessaging.send(firebaseMessage);
-        logger.atInfo().log("Notified chat message posted: {}", firebaseMessageID);
+        logger.atDebug().log("Notified chat message posted: {}", firebaseMessageID);
         return true;
       } catch (FirebaseMessagingException fme) {
         throw new IllegalStateException(fme);

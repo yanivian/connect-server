@@ -55,19 +55,19 @@ public final class ConnectionsAspect {
   }
 
   private ConnectionModel addConnectionInternal(String actorUserID, String targetUserID) {
-    LOGGER.atInfo().log("Adding Connection: Actor={}, Target={}", actorUserID, targetUserID);
+    LOGGER.atDebug().log("Adding Connection: Actor={}, Target={}", actorUserID, targetUserID);
 
     Optional<ConnectionModel> outgoingConnection =
         connectionDao.findConnection(actorUserID, targetUserID);
     ConnectionState outgoingConnectionState =
         outgoingConnection.map(ConnectionModel::getState).orElse(ConnectionState.UNDEFINED);
-    LOGGER.atInfo().log("- Outgoing connection state: {}", outgoingConnectionState);
+    LOGGER.atDebug().log("- Outgoing connection state: {}", outgoingConnectionState);
 
     Optional<ConnectionModel> incomingConnection =
         connectionDao.findConnection(targetUserID, actorUserID);
     ConnectionState incomingConnectionState =
         incomingConnection.map(ConnectionModel::getState).orElse(ConnectionState.UNDEFINED);
-    LOGGER.atInfo().log("- Incoming connection state: {}", incomingConnectionState);
+    LOGGER.atDebug().log("- Incoming connection state: {}", incomingConnectionState);
 
     switch (incomingConnectionState) {
       case UNDEFINED:
@@ -104,30 +104,30 @@ public final class ConnectionsAspect {
   }
 
   public ConnectionsSnapshot getSnapshot(String ownerUserID, String ownerPhoneNumber) {
-    LOGGER.atInfo().log("Fetching ConnectionSnapshot: ID={}, PhoneNumber={}", ownerUserID,
+    LOGGER.atDebug().log("Fetching ConnectionSnapshot: ID={}, PhoneNumber={}", ownerUserID,
         ownerPhoneNumber);
 
     // Fetch invites (this user's contacts.)
     ImmutableList<Contact> invites = contactDao.listContactsOwnedBy(ownerUserID).stream()
         .map(ContactModel::toProto).collect(ImmutableList.toImmutableList());
-    LOGGER.atInfo().log("- Output {} Invites.", invites.size());
+    LOGGER.atDebug().log("- Output {} Invites.", invites.size());
 
     // Fetch inviters (users that have added this user as a contact.)
     ImmutableList<ContactModel> contacts =
         contactDao.listContactsTargetingPhoneNumber(ownerPhoneNumber);
     ImmutableSet<String> inviterUserIDs =
         contacts.stream().map(ContactModel::getOwnerUserID).collect(ImmutableSet.toImmutableSet());
-    LOGGER.atInfo().log("- Found {} Inviters.", inviterUserIDs.size());
+    LOGGER.atDebug().log("- Found {} Inviters.", inviterUserIDs.size());
 
     // Fetch incoming connections.
     ImmutableList<ConnectionModel> incomingConnections =
         connectionDao.listConnectionsForTarget(ownerUserID);
-    LOGGER.atInfo().log("- Found {} Incoming Connections.", incomingConnections.size());
+    LOGGER.atDebug().log("- Found {} Incoming Connections.", incomingConnections.size());
 
     // Fetch outgoing connections.
     ImmutableList<ConnectionModel> outgoingConnections =
         connectionDao.listConnectionsForOwner(ownerUserID);
-    LOGGER.atInfo().log("- Found {} Outgoing Connections.", outgoingConnections.size());
+    LOGGER.atDebug().log("- Found {} Outgoing Connections.", outgoingConnections.size());
 
     // Fetch relevant profiles.
     Set<String> otherUserIDs = new HashSet<>(inviterUserIDs);
@@ -139,7 +139,7 @@ public final class ConnectionsAspect {
 
     // Inviters
     ImmutableList<UserInfo> inviters = profileCache.getUsers(inviterUserIDs, false);
-    LOGGER.atInfo().log("- Output {} Inviters.", inviters.size());
+    LOGGER.atDebug().log("- Output {} Inviters.", inviters.size());
 
     // Connections
     ImmutableSet<String> allIncomingUserIDs = incomingConnections.stream()
@@ -149,19 +149,19 @@ public final class ConnectionsAspect {
     ImmutableSet<String> connectedUserIDs =
         ImmutableSet.copyOf(Sets.intersection(allIncomingUserIDs, allOutgoingUserIDs));
     ImmutableList<UserInfo> connected = profileCache.getUsers(connectedUserIDs, true);
-    LOGGER.atInfo().log("- Output {} Connected.", inviters.size());
+    LOGGER.atDebug().log("- Output {} Connected.", inviters.size());
 
     // Incoming
     ImmutableSet<String> incomingUserIDs =
         ImmutableSet.copyOf(Sets.difference(allIncomingUserIDs, connectedUserIDs));
     ImmutableList<UserInfo> incoming = profileCache.getUsers(incomingUserIDs, false);
-    LOGGER.atInfo().log("- Output {} Incoming.", incoming.size());
+    LOGGER.atDebug().log("- Output {} Incoming.", incoming.size());
 
     // Outgoing
     ImmutableSet<String> outgoingUserIDs =
         ImmutableSet.copyOf(Sets.difference(allOutgoingUserIDs, connectedUserIDs));
     ImmutableList<UserInfo> outgoing = profileCache.getUsers(outgoingUserIDs, false);
-    LOGGER.atInfo().log("- Output {} Outgoing.", outgoing.size());
+    LOGGER.atDebug().log("- Output {} Outgoing.", outgoing.size());
 
     // Consolidate as a snapshot.
     return ConnectionsSnapshot.newBuilder().addAllInvites(invites).addAllInviters(inviters)

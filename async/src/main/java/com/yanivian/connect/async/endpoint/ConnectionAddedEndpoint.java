@@ -67,7 +67,7 @@ public final class ConnectionAddedEndpoint extends GuiceEndpoint {
           .withNotification(notification.build()).withData("ConnectionAdded", payload).build();
       try {
         String messageID = firebaseMessaging.send(message);
-        logger.atInfo().log("Notified connection added: {}", messageID);
+        logger.atDebug().log("Notified connection added: {}", messageID);
       } catch (FirebaseMessagingException fme) {
         logger.atError().withThrowable(fme).log("Failed to notify connection added.");
       }

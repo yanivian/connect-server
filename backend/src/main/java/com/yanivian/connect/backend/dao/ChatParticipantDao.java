@@ -120,7 +120,7 @@ public final class ChatParticipantDao {
     }
 
     public Optional<String> getDraftText() {
-      return getOptionalProperty(Columns.MostRecentObservedMessageID);
+      return getOptionalProperty(Columns.DraftText);
     }
   }
 

@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
@@ -184,7 +186,7 @@ public final class ChatsAspect {
         // Update last seen message ID if it is more recent.
         if (!participant.getMostRecentObservedMessageID().isPresent()
             || participant.getMostRecentObservedMessageID().get() < lastSeenMessageID.get()) {
-          participant.setMostRecentObservedMessageID(lastSeenMessageID.get());
+          participant = participant.setMostRecentObservedMessageID(lastSeenMessageID.get());
           hasChanged = true;
         }
       }
@@ -192,7 +194,7 @@ public final class ChatsAspect {
         Optional<String> newValue =
             Strings.isNullOrEmpty(draftText.get()) ? Optional.empty() : draftText;
         if (!participant.getDraftText().equals(newValue)) {
-          participant.setDraftText(newValue);
+          participant = participant.setDraftText(newValue);
           hasChanged = true;
         }
       }
@@ -201,19 +203,19 @@ public final class ChatsAspect {
       }
 
       // Update chat, if needed.
-      if (chat.getTypingUserIDs().contains(userID) ^ participant.getDraftText().isPresent()) {
-        Set<String> typingUserIDs = new HashSet<>(chat.getTypingUserIDs());
-        if (participant.getDraftText().isPresent()) {
-          typingUserIDs.add(userID);
-        } else {
-          typingUserIDs.remove(userID);
-        }
+      Set<String> typingUserIDs = new HashSet<>(chat.getTypingUserIDs());
+      if (participant.getDraftText().isPresent()) {
+        typingUserIDs.add(userID);
+      } else {
+        typingUserIDs.remove(userID);
+      }
+      if (!chat.getTypingUserIDs().equals(typingUserIDs)) {
         chat = chat.setTypingUserIDs(typingUserIDs).save(txn, datastore);
+
         // Notify the other participants.
         for (String participantUserID : chat.getParticipantUserIDs()) {
           if (!participantUserID.equals(userID)) {
-            asyncTaskQueue.notifyChatMessagePosted(txn, chatID, chat.getMostRecentMessageID(),
-                participantUserID);
+            asyncTaskQueue.notifyChatUpdate(txn, chatID, participantUserID);
           }
         }
       }

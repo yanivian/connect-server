@@ -13,6 +13,7 @@ message ChatGistInfo {
   ChatMessageInfo LatestMessage = 3;
   optional int64 LastSeenMessageID = 4;
   repeated UserInfo TypingUsers = 5;
+  optional string DraftText = 6;
 }
 
 message ChatMessageInfo {

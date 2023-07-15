@@ -262,6 +262,7 @@ public final class ChatsAspect {
     chat.getTypingUserIDs().forEach(typingUserID -> {
       profileCache.getUser(typingUserID, true).ifPresent(gistInfo::addTypingUsers);
     });
+    participant.flatMap(ChatParticipantModel::getDraftText).ifPresent(gistInfo::setDraftText);
 
     // Create slice.
     return ChatSlice.newBuilder().setGist(gistInfo).addAllMessages(messageInfos).build();

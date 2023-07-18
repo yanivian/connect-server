@@ -47,13 +47,14 @@ public final class ChatParticipantDao {
             Function.identity()));
   }
 
-  public ChatParticipantModel newChatParticipant(String chatID, String userID) {
-    Entity entity = new Entity(ChatParticipantModel.KIND, userID, ChatDao.toKey(chatID));
-    return new ChatParticipantModel(entity);
+  public ChatParticipantModel getOrNewChatParticipant(Transaction txn, String chatID,
+      String userID) {
+    return getChatParticipant(txn, chatID, userID).orElse(newChatParticipant(chatID, userID));
   }
 
-  public ChatParticipantModel getOrNewParticipant(Transaction txn, String userID, String chatID) {
-    return getChatParticipant(txn, chatID, userID).orElse(newChatParticipant(chatID, userID));
+  private ChatParticipantModel newChatParticipant(String chatID, String userID) {
+    Entity entity = new Entity(ChatParticipantModel.KIND, userID, ChatDao.toKey(chatID));
+    return new ChatParticipantModel(entity);
   }
 
   public static final class ChatParticipantModel extends DatastoreModel<ChatParticipantModel> {

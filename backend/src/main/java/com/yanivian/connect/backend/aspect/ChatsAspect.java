@@ -101,12 +101,9 @@ public final class ChatsAspect {
     return DatastoreUtil.newTransaction(datastore, txn -> {
       ChatModel chat = chatDao.getChat(txn, chatID).orElseThrow(IllegalStateException::new);
       ImmutableList<ChatMessageModel> messages = chatMessageDao.listChatMessages(txn, chatID);
-      // A chat must have at least one message.
-      long mostRecentMessageID = messages.stream().mapToLong(ChatMessageModel::getMessageID).max()
-          .orElseThrow(IllegalStateException::new);
-      ChatParticipantModel participant = chatParticipantDao.getOrNewParticipant(txn, userID, chatID)
-          .setMostRecentObservedMessageID(mostRecentMessageID).save(txn, datastore, clock);
-      return toSlice(txn, chat, messages, Optional.of(participant));
+      Optional<ChatParticipantModel> participant =
+          chatParticipantDao.getChatParticipant(txn, chatID, userID);
+      return toSlice(txn, chat, messages, participant);
     });
   }
 
@@ -163,9 +160,9 @@ public final class ChatsAspect {
     }
 
     // Create or update participant entity.
-    ChatParticipantModel participant = chatParticipantDao.getOrNewParticipant(txn, userID, chatID)
-        .setMostRecentObservedMessageID(messageID).setDraftText(Optional.empty())
-        .save(txn, datastore, clock);
+    ChatParticipantModel participant = chatParticipantDao
+        .getOrNewChatParticipant(txn, chatID, userID).setMostRecentObservedMessageID(messageID)
+        .setDraftText(Optional.empty()).save(txn, datastore, clock);
 
     return toSlice(txn, chat, ImmutableList.of(message), Optional.of(participant));
   }
@@ -185,7 +182,7 @@ public final class ChatsAspect {
 
       // Update participant, if needed.
       ChatParticipantModel participant =
-          chatParticipantDao.getOrNewParticipant(txn, userID, chatID);
+          chatParticipantDao.getOrNewChatParticipant(txn, chatID, userID);
       boolean hasChanged = false;
       if (lastSeenMessageID.isPresent()) {
         // Update last seen message ID if it is more recent.

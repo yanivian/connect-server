@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 import com.google.protobuf.Internal;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -74,6 +75,14 @@ public abstract class GuiceEndpoint extends HttpServlet {
     return Strings.isNullOrEmpty(value) ? Optional.empty() : Optional.of(value);
   }
 
+  protected ImmutableList<String> getListParameter(HttpServletRequest req, String name) {
+    String value = req.getParameter(name);
+    if (Strings.isNullOrEmpty(value)) {
+      return ImmutableList.of();
+    }
+    return ImmutableList.copyOf(value.split(listParamSplitRegex));
+  }
+
   /** Writes a protobuf message as a json response. */
   protected void writeJsonResponse(HttpServletResponse response, MessageOrBuilder messageOrBuilder)
       throws IOException {
@@ -106,4 +115,5 @@ public abstract class GuiceEndpoint extends HttpServlet {
       throws IOException, ServletException;
 
   private static final long serialVersionUID = 1L;
+  private static final String listParamSplitRegex = ",+";
 }

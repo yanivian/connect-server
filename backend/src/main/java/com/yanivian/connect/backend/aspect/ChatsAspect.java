@@ -10,6 +10,7 @@ import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -107,8 +108,9 @@ public final class ChatsAspect {
     });
   }
 
-  public ChatSlice postMessageToUser(String userID, String targetUserID, Optional<String> text) {
-    ImmutableSet<String> participantUserIDs = ImmutableSet.of(userID, targetUserID);
+  public ChatSlice postMessageToTargetUsers(String userID,
+      ImmutableCollection<String> targetUserIDs, Optional<String> text) {
+    ImmutableSet<String> participantUserIDs = mergeAllUserIDs(userID, targetUserIDs);
     Optional<String> optionalChatID =
         chatDao.findChatByParticipants(participantUserIDs).map(ChatModel::getID);
     return DatastoreUtil.newTransaction(datastore, txn -> {
@@ -269,5 +271,12 @@ public final class ChatsAspect {
 
     // Create slice.
     return ChatSlice.newBuilder().setGist(gistInfo).addAllMessages(messageInfos).build();
+  }
+
+  private static ImmutableSet<String> mergeAllUserIDs(String userID,
+      Collection<String> otherUsersIDs) {
+    Set<String> result = new HashSet<>(otherUsersIDs);
+    result.add(userID);
+    return ImmutableSet.copyOf(result);
   }
 }

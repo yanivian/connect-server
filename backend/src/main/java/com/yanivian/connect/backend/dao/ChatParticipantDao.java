@@ -1,6 +1,5 @@
 package com.yanivian.connect.backend.dao;
 
-import java.time.Clock;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.inject.Inject;
@@ -19,12 +18,10 @@ import com.yanivian.connect.backend.proto.model.ChatParticipant;
 public final class ChatParticipantDao {
 
   private final DatastoreService datastore;
-  private final Clock clock;
 
   @Inject
-  ChatParticipantDao(DatastoreService datastore, Clock clock) {
+  ChatParticipantDao(DatastoreService datastore) {
     this.datastore = datastore;
-    this.clock = clock;
   }
 
   public Optional<ChatParticipantModel> getChatParticipant(Transaction txn, String chatID,

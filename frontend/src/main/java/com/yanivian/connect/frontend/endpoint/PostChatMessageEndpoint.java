@@ -7,7 +7,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.google.appengine.api.datastore.DatastoreService;
-import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.yanivian.connect.backend.aspect.ChatsAspect;
 import com.yanivian.connect.backend.dao.DatastoreUtil;
 import com.yanivian.connect.backend.proto.aspect.ChatSlice;
@@ -20,6 +20,7 @@ public final class PostChatMessageEndpoint extends GuiceEndpoint {
 
   private static final String PARAM_CHAT_ID = "chatID";
   private static final String PARAM_TARGET_USER_ID = "targetUserID";
+  private static final String PARAM_TARGET_USER_IDS = "targetUserIDs";
   private static final String PARAM_TEXT = "text";
 
   @Inject
@@ -34,25 +35,27 @@ public final class PostChatMessageEndpoint extends GuiceEndpoint {
 
   @Override
   protected void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-    Optional<String> userID = authHelper.getVerifiedUserID(req, resp);
-    if (!userID.isPresent()) {
+    Optional<String> requesterID = authHelper.getVerifiedUserID(req, resp);
+    if (!requesterID.isPresent()) {
       return;
     }
 
     Optional<String> chatID = getOptionalParameter(req, PARAM_CHAT_ID);
     Optional<String> targetUserID = getOptionalParameter(req, PARAM_TARGET_USER_ID);
-    Preconditions.checkState(chatID.isPresent() ^ targetUserID.isPresent());
+    ImmutableList<String> targetUserIDs = getListParameter(req, PARAM_TARGET_USER_IDS);
 
     Optional<String> text = getOptionalParameter(req, PARAM_TEXT);
 
     ChatSlice result = DatastoreUtil.newTransaction(datastore, txn -> {
-      if (targetUserID.isPresent()) {
-        return chatsAspect.postMessageToUser(userID.get(), targetUserID.get(), text);
-      }
       if (chatID.isPresent()) {
-        return chatsAspect.postMessageToChat(userID.get(), chatID.get(), text);
+        return chatsAspect.postMessageToChat(requesterID.get(), chatID.get(), text);
       }
-      throw new IllegalStateException();
+      if (targetUserID.isPresent()) {
+        return chatsAspect.postMessageToTargetUsers(requesterID.get(),
+            ImmutableList.of(targetUserID.get()), text);
+      }
+      // If there are no target users, the chat will include just the requester.
+      return chatsAspect.postMessageToTargetUsers(requesterID.get(), targetUserIDs, text);
     });
 
     writeJsonResponse(resp, result);

@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
@@ -71,19 +70,15 @@ public final class ProfileDao {
   /** Creates, saves and returns a new profile. */
   public ProfileModel createProfile(Transaction txn, String userID, String phoneNumber) {
     Entity entity = new Entity(ProfileModel.KIND, userID);
-    return new ProfileModel(entity).setPhoneNumber(phoneNumber)
-        .setCreatedTimestampMillis(clock.millis()).save(txn, datastore);
+    return new ProfileModel(entity).setPhoneNumber(phoneNumber).save(txn, datastore, clock);
   }
 
-  public static final class ProfileModel extends DatastoreModel<Profile, ProfileModel> {
+  public static final class ProfileModel extends DatastoreModel<ProfileModel> {
 
     static final String KIND = "Profile";
     private static final String PROPERTY_PHONE_NUMBER = "PhoneNumber";
-    private static final String PROPERTY_CREATED_TIMESTAMP_MILLIS = "CreatedTimestampMillis";
     private static final String PROPERTY_NAME = "Name";
     private static final String PROPERTY_EMAIL_ADDRESS = "EmailAddress";
-    private static final String PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS =
-        "LastUpdatedTimestampMillis";
     private static final String PROPERTY_IMAGE = "Image";
     private static final String PROPERTY_DEVICE_TOKEN = "DeviceToken";
 
@@ -91,15 +86,18 @@ public final class ProfileDao {
       super(entity);
     }
 
-    @Override
+    /** Returns a protobuf model representing the underlying entity. */
     public Profile toProto() {
       Profile.Builder profile = Profile.newBuilder().setUserID(getID())
-          .setPhoneNumber(getPhoneNumber()).setCreatedTimestampMillis(getCreatedTimestampMillis());
+          .setPhoneNumber(getPhoneNumber()).setTimestampMillis(getTimestampMillis());
       getName().ifPresent(profile::setName);
       getEmailAddress().ifPresent(profile::setEmailAddress);
       getImage().ifPresent(imageID -> profile.getImageBuilder().setID(imageID));
-      getLastUpdatedTimestampMillis().ifPresent(profile::setLastUpdatedTimestampMillis);
       return profile.build();
+    }
+
+    public String getID() {
+      return getKey().getName();
     }
 
     public ProfileModel setPhoneNumber(String phoneNumber) {
@@ -109,15 +107,6 @@ public final class ProfileDao {
 
     public String getPhoneNumber() {
       return (String) entity.getProperty(PROPERTY_PHONE_NUMBER);
-    }
-
-    public ProfileModel setCreatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS, timestampMillis);
-      return this;
-    }
-
-    public long getCreatedTimestampMillis() {
-      return (long) entity.getProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS);
     }
 
     public ProfileModel setName(Optional<String> name) {
@@ -170,16 +159,6 @@ public final class ProfileDao {
 
     public Optional<String> getDeviceToken() {
       return getOptionalProperty(PROPERTY_DEVICE_TOKEN);
-    }
-
-    public ProfileModel setLastUpdatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS, timestampMillis);
-      return this;
-    }
-
-    public OptionalLong getLastUpdatedTimestampMillis() {
-      Optional<Long> value = getOptionalProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS);
-      return value.isPresent() ? OptionalLong.of(value.get()) : OptionalLong.empty();
     }
   }
 

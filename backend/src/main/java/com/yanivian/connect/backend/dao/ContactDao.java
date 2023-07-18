@@ -2,7 +2,6 @@ package com.yanivian.connect.backend.dao;
 
 import java.time.Clock;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.UUID;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
@@ -38,14 +37,12 @@ public final class ContactDao {
       Optional<ContactModel> contactModel = contactKey.flatMap(key -> getContact(txn, key));
       if (contactModel.isPresent()) {
         // Update the existing contact.
-        return contactModel.get().setName(name).setLastUpdatedTimestampMillis(clock.millis())
-            .save(txn, datastore);
+        return contactModel.get().setName(name).save(txn, datastore, clock);
       }
       // Create a new contact.
       Entity entity = new Entity(ContactModel.KIND, UUID.randomUUID().toString());
-      return new ContactModel(entity).setOwnerUserID(ownerUserID)
-          .setCreatedTimestampMillis(clock.millis()).setName(name).setPhoneNumber(phoneNumber)
-          .save(txn, datastore);
+      return new ContactModel(entity).setOwnerUserID(ownerUserID).setName(name)
+          .setPhoneNumber(phoneNumber).save(txn, datastore, clock);
     });
   }
 
@@ -109,26 +106,25 @@ public final class ContactDao {
         .collect(ImmutableList.toImmutableList());
   }
 
-  public static class ContactModel extends DatastoreModel<Contact, ContactModel> {
+  public static class ContactModel extends DatastoreModel<ContactModel> {
     static final String KIND = "Contact";
     private static final String PROPERTY_OWNER_USER_ID = "OwnerUserID";
-    private static final String PROPERTY_CREATED_TIMESTAMP_MILLIS = "CreatedTimestampMillis";
     private static final String PROPERTY_NAME = "Name";
     private static final String PROPERTY_PHONE_NUMBER = "PhoneNumber";
-    private static final String PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS =
-        "LastUpdatedTimestampMillis";
 
     private ContactModel(Entity entity) {
       super(entity);
     }
 
-    @Override
+    /** Returns a protobuf model representing the underlying entity. */
     public Contact toProto() {
-      Contact.Builder contact = Contact.newBuilder().setID(getID()).setOwnerUserID(getOwnerUserID())
-          .setCreatedTimestampMillis(getCreatedTimestampMillis()).setName(getName())
-          .setPhoneNumber((getPhoneNumber()));
-      getLastUpdatedTimestampMillis().ifPresent(contact::setLastUpdatedTimestampMillis);
-      return contact.build();
+      return Contact.newBuilder().setID(getID()).setOwnerUserID(getOwnerUserID())
+          .setTimestampMillis(getTimestampMillis()).setName(getName())
+          .setPhoneNumber((getPhoneNumber())).build();
+    }
+
+    public String getID() {
+      return getKey().getName();
     }
 
     public String getOwnerUserID() {
@@ -137,15 +133,6 @@ public final class ContactDao {
 
     private ContactModel setOwnerUserID(String ownerUserID) {
       entity.setProperty(PROPERTY_OWNER_USER_ID, ownerUserID);
-      return this;
-    }
-
-    public long getCreatedTimestampMillis() {
-      return (long) entity.getProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS);
-    }
-
-    private ContactModel setCreatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS, timestampMillis);
       return this;
     }
 
@@ -164,16 +151,6 @@ public final class ContactDao {
 
     private ContactModel setPhoneNumber(String phoneNumber) {
       entity.setProperty(PROPERTY_PHONE_NUMBER, phoneNumber);
-      return this;
-    }
-
-    public OptionalLong getLastUpdatedTimestampMillis() {
-      Optional<Long> value = getOptionalProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS);
-      return value.isPresent() ? OptionalLong.of(value.get()) : OptionalLong.empty();
-    }
-
-    public ContactModel setLastUpdatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS, timestampMillis);
       return this;
     }
   }

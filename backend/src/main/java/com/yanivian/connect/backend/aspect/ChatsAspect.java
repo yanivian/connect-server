@@ -1,5 +1,6 @@
 package com.yanivian.connect.backend.aspect;
 
+import java.time.Clock;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
@@ -38,17 +39,19 @@ public final class ChatsAspect {
   private final ProfilesAspect profilesAspect;
   private final DatastoreService datastore;
   private final AsyncTaskQueueAdapter asyncTaskQueue;
+  private final Clock clock;
 
   @Inject
   ChatsAspect(ChatDao chatDao, ChatMessageDao chatMessageDao, ChatParticipantDao chatParticipantDao,
       ProfilesAspect profilesAspect, DatastoreService datastore,
-      AsyncTaskQueueAdapter asyncTaskQueue) {
+      AsyncTaskQueueAdapter asyncTaskQueue, Clock clock) {
     this.chatDao = chatDao;
     this.chatMessageDao = chatMessageDao;
     this.chatParticipantDao = chatParticipantDao;
     this.profilesAspect = profilesAspect;
     this.datastore = datastore;
     this.asyncTaskQueue = asyncTaskQueue;
+    this.clock = clock;
   }
 
   public ChatsSnapshot getSnapshot(String userID) {
@@ -102,7 +105,7 @@ public final class ChatsAspect {
       long mostRecentMessageID = messages.stream().mapToLong(ChatMessageModel::getMessageID).max()
           .orElseThrow(IllegalStateException::new);
       ChatParticipantModel participant = chatParticipantDao.getOrNewParticipant(txn, userID, chatID)
-          .setMostRecentObservedMessageID(mostRecentMessageID).save(txn, datastore);
+          .setMostRecentObservedMessageID(mostRecentMessageID).save(txn, datastore, clock);
       return toSlice(txn, chat, messages, Optional.of(participant));
     });
   }
@@ -118,7 +121,7 @@ public final class ChatsAspect {
         chat = chatDao.getChat(txn, optionalChatID.get()).orElseThrow(IllegalStateException::new);
         Preconditions.checkState(chat.getParticipantUserIDs().contains(userID));
         chat.setMostRecentMessageID(chat.getMostRecentMessageID() + 1).removeTypingUserID(userID)
-            .save(txn, datastore);
+            .save(txn, datastore, clock);
       } else {
         chat = chatDao.createChat(txn, participantUserIDs);
       }
@@ -134,7 +137,7 @@ public final class ChatsAspect {
       ChatModel chat = chatDao.getChat(txn, chatID).orElseThrow(IllegalStateException::new);
       Preconditions.checkState(chat.getParticipantUserIDs().contains(userID));
       chat.setMostRecentMessageID(chat.getMostRecentMessageID() + 1).removeTypingUserID(userID)
-          .save(txn, datastore);
+          .save(txn, datastore, clock);
 
       // Post message within the chat.
       return postMessage(txn, userID, chat, text);
@@ -162,7 +165,7 @@ public final class ChatsAspect {
     // Create or update participant entity.
     ChatParticipantModel participant = chatParticipantDao.getOrNewParticipant(txn, userID, chatID)
         .setMostRecentObservedMessageID(messageID).setDraftText(Optional.empty())
-        .save(txn, datastore);
+        .save(txn, datastore, clock);
 
     return toSlice(txn, chat, ImmutableList.of(message), Optional.of(participant));
   }
@@ -201,7 +204,7 @@ public final class ChatsAspect {
         }
       }
       if (hasChanged) {
-        participant = participant.save(txn, datastore);
+        participant = participant.save(txn, datastore, clock);
       }
 
       // Update chat, if needed.
@@ -212,7 +215,7 @@ public final class ChatsAspect {
         chat.removeTypingUserID(userID);
       }
       if (!chat.getTypingUserIDs().equals(typingUserIDs)) {
-        chat.save(txn, datastore);
+        chat.save(txn, datastore, clock);
 
         // Notify the other participants.
         for (String participantUserID : chat.getParticipantUserIDs()) {
@@ -244,9 +247,8 @@ public final class ChatsAspect {
       ImmutableList<ChatMessageModel> messages, Optional<ChatParticipantModel> participant) {
     // Create messages with poster details.
     ImmutableList<ChatMessageInfo> messageInfos = messages.stream().map(message -> {
-      ChatMessageInfo.Builder messageInfo =
-          ChatMessageInfo.newBuilder().setMessageID(message.getMessageID())
-              .setCreatedTimestampMillis(message.getCreatedTimestampMillis());
+      ChatMessageInfo.Builder messageInfo = ChatMessageInfo.newBuilder()
+          .setMessageID(message.getMessageID()).setTimestampMillis(message.getTimestampMillis());
       profileCache.getUser(message.getUserID(), true).ifPresent(messageInfo::setPoster);
       message.getText().ifPresent(messageInfo::setText);
       return messageInfo.build();
@@ -254,8 +256,10 @@ public final class ChatsAspect {
 
     // Create gist with latest message.
     ChatMessageInfo latestMessageInfo = messageInfos.get(0);
-    ChatGistInfo.Builder gistInfo =
-        ChatGistInfo.newBuilder().setChatID(chat.getID()).setLatestMessage(latestMessageInfo);
+    ChatGistInfo.Builder gistInfo = ChatGistInfo.newBuilder().setChatID(chat.getID())
+        .setTimestampMillis(chat.getTimestampMillis())
+        .setUniqueParticipantsSearchKey(chat.getUniqueParticipantsSearchKey())
+        .setLatestMessage(latestMessageInfo);
     participant.flatMap(ChatParticipantModel::getMostRecentObservedMessageID)
         .ifPresent(gistInfo::setLastSeenMessageID);
     chat.getParticipantUserIDs().forEach(participantUserID -> {

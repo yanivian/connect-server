@@ -49,20 +49,18 @@ public final class ChatParticipantDao {
 
   public ChatParticipantModel newChatParticipant(String chatID, String userID) {
     Entity entity = new Entity(ChatParticipantModel.KIND, userID, ChatDao.toKey(chatID));
-    return new ChatParticipantModel(entity).setCreatedTimestampMillis(clock.millis());
+    return new ChatParticipantModel(entity);
   }
 
   public ChatParticipantModel getOrNewParticipant(Transaction txn, String userID, String chatID) {
     return getChatParticipant(txn, chatID, userID).orElse(newChatParticipant(chatID, userID));
   }
 
-  public static final class ChatParticipantModel
-      extends DatastoreModel<ChatParticipant, ChatParticipantModel> {
+  public static final class ChatParticipantModel extends DatastoreModel<ChatParticipantModel> {
 
     private static final String KIND = "ChatParticipant";
 
     private static final class Columns {
-      static final String CreatedTimestampMillis = "CreatedTimestampMillis";
       static final String MostRecentObservedMessageID = "MostRecentObservedMessageID";
       static final String DraftText = "DraftText";
     }
@@ -71,10 +69,10 @@ public final class ChatParticipantDao {
       super(entity);
     }
 
-    @Override
+    /** Returns a protobuf model representing the underlying entity. */
     public ChatParticipant toProto() {
       ChatParticipant.Builder chatParticipant = ChatParticipant.newBuilder().setChatID(getChatID())
-          .setUserID(getUserID()).setCreatedTimestampMillis(getCreatedTimestampMillis());
+          .setUserID(getUserID()).setTimestampMillis(getTimestampMillis());
       getMostRecentObservedMessageID().ifPresent(chatParticipant::setMostRecentObservedMessageID);
       getDraftText().ifPresent(chatParticipant::setDraftText);
       return chatParticipant.build();
@@ -85,20 +83,11 @@ public final class ChatParticipantDao {
     }
 
     public String getUserID() {
-      return getID();
+      return getKey().getName();
     }
 
     public ChatParticipantKey getChatParticipantKey() {
       return toChatParticipantKey(getChatID(), getUserID());
-    }
-
-    public ChatParticipantModel setCreatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(Columns.CreatedTimestampMillis, timestampMillis);
-      return this;
-    }
-
-    public long getCreatedTimestampMillis() {
-      return (long) entity.getProperty(Columns.CreatedTimestampMillis);
     }
 
     public ChatParticipantModel setMostRecentObservedMessageID(long value) {

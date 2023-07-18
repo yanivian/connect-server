@@ -9,17 +9,21 @@ option java_multiple_files = true;
 
 message ChatGistInfo {
   string ChatID = 1;
-  repeated UserInfo Participants = 2;
-  ChatMessageInfo LatestMessage = 3;
-  optional int64 LastSeenMessageID = 4;
-  repeated UserInfo TypingUsers = 5;
-  optional string DraftText = 6;
+  // Most current timestamp in milliseconds.
+  int64 TimestampMillis = 2;
+  repeated UserInfo Participants = 3;
+  string UniqueParticipantsSearchKey = 4;
+  ChatMessageInfo LatestMessage = 5;
+  optional int64 LastSeenMessageID = 6;
+  repeated UserInfo TypingUsers = 7;
+  optional string DraftText = 8;
 }
 
 message ChatMessageInfo {
   int64 MessageID = 1;
-  UserInfo Poster = 2;
-  int64 CreatedTimestampMillis = 3;
+  // Most current timestamp in milliseconds.
+  int64 TimestampMillis = 2;
+  UserInfo Poster = 3;
   optional string Text = 4;
 }
 
@@ -53,8 +57,10 @@ message ConnectionsSnapshot {
 
 message UserInfo {
   string UserID = 1;
+  // Most current timestamp in milliseconds.
+  int64 TimestampMillis = 2;
   // The phone number is populated for connected users.
-  optional string PhoneNumber = 2;
-  optional string Name = 3;
-  optional .backend.model.Image Image = 4;
+  optional string PhoneNumber = 3;
+  optional string Name = 4;
+  optional .backend.model.Image Image = 5;
 }

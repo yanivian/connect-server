@@ -1,5 +1,6 @@
 package com.yanivian.connect.backend.aspect;
 
+import java.time.Clock;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
@@ -25,12 +26,15 @@ public final class ProfilesAspect {
   private final ProfileDao profileDao;
   private final ImageDao imageDao;
   private final DatastoreService datastore;
+  private final Clock clock;
 
   @Inject
-  ProfilesAspect(ProfileDao profileDao, ImageDao imageDao, DatastoreService datastore) {
+  ProfilesAspect(ProfileDao profileDao, ImageDao imageDao, DatastoreService datastore,
+      Clock clock) {
     this.profileDao = profileDao;
     this.imageDao = imageDao;
     this.datastore = datastore;
+    this.clock = clock;
   }
 
   public Profile getOrCreateProfile(String userID, String phoneNumber) {
@@ -89,7 +93,7 @@ public final class ProfilesAspect {
         return Optional.empty();
       }
       ProfileModel profileModel = optionalProfileModel.get().setName(name)
-          .setEmailAddress(emailAddress).setImage(imageID).save(txn, datastore);
+          .setEmailAddress(emailAddress).setImage(imageID).save(txn, datastore, clock);
       return Optional.of(toProfile(txn, profileModel));
     });
   }
@@ -120,7 +124,7 @@ public final class ProfilesAspect {
         } else {
           profileModel.setDeviceToken(Optional.empty());
         }
-        profileModel.save(txn, datastore);
+        profileModel.save(txn, datastore, clock);
       });
       return true;
     });
@@ -203,7 +207,8 @@ public final class ProfilesAspect {
         return Optional.empty();
       }
 
-      UserInfo.Builder user = UserInfo.newBuilder().setUserID(userID);
+      UserInfo.Builder user = UserInfo.newBuilder().setUserID(userID)
+          .setTimestampMillis(profileModel.getTimestampMillis());
       if (isConnected) {
         user.setPhoneNumber(profileModel.getPhoneNumber());
       }

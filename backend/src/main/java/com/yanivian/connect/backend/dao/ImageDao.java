@@ -49,8 +49,7 @@ public final class ImageDao {
     String url = blobDao.getImageUrl(id, IMAGES);
 
     Entity entity = new Entity(ImageModel.KIND, id);
-    return new ImageModel(entity).setUserID(userID).setCreatedTimestampMillis(clock.millis())
-        .setURL(url).save(txn, datastore);
+    return new ImageModel(entity).setUserID(userID).setURL(url).save(txn, datastore, clock);
   }
 
   /** Fetches image metadata if present. */
@@ -79,21 +78,24 @@ public final class ImageDao {
     datastore.delete(txn, image.getKey());
   }
 
-  public static class ImageModel extends DatastoreModel<Image, ImageModel> {
+  public static class ImageModel extends DatastoreModel<ImageModel> {
 
     static final String KIND = "Image";
     private static final String PROPERTY_USER_ID = "UserID";
-    private static final String PROPERTY_CREATED_TIMESTAMP_MILLIS = "CreatedTimestampMillis";
     private static final String PROPERTY_URL = "URL";
 
     private ImageModel(Entity entity) {
       super(entity);
     }
 
-    @Override
+    /** Returns a protobuf model representing the underlying entity. */
     public Image toProto() {
       return Image.newBuilder().setID(getID()).setUserID(getUserID())
-          .setCreatedTimestampMillis(getCreatedTimestampMillis()).setURL(getURL()).build();
+          .setTimestampMillis(getTimestampMillis()).setURL(getURL()).build();
+    }
+
+    public String getID() {
+      return getKey().getName();
     }
 
     public String getURL() {
@@ -104,10 +106,6 @@ public final class ImageDao {
       return (String) entity.getProperty(PROPERTY_USER_ID);
     }
 
-    public long getCreatedTimestampMillis() {
-      return (long) entity.getProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS);
-    }
-
     private ImageModel setURL(String url) {
       entity.setUnindexedProperty(PROPERTY_URL, url);
       return this;
@@ -115,11 +113,6 @@ public final class ImageDao {
 
     private ImageModel setUserID(String userID) {
       entity.setProperty(PROPERTY_USER_ID, userID);
-      return this;
-    }
-
-    private ImageModel setCreatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS, timestampMillis);
       return this;
     }
   }

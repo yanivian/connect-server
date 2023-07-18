@@ -2,7 +2,6 @@ package com.yanivian.connect.backend.dao;
 
 import java.time.Clock;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.UUID;
 import javax.inject.Inject;
 import com.google.appengine.api.datastore.DatastoreService;
@@ -35,7 +34,7 @@ public final class ConnectionDao {
       ConnectionState state) {
     Entity entity = new Entity(ConnectionModel.KIND, UUID.randomUUID().toString());
     return new ConnectionModel(entity).setOwnerUserID(ownerUserID).setTargetUserID(targetUserID)
-        .setState(state).setCreatedTimestampMillis(clock.millis()).save(txn, datastore);
+        .setState(state).save(txn, datastore, clock);
   }
 
   public ConnectionModel updateConnection(Transaction txn, ConnectionModel connection,
@@ -48,8 +47,7 @@ public final class ConnectionDao {
       return connectionModel;
     }
     // Update the connection.
-    return connectionModel.setState(state).setLastUpdatedTimestampMillis(clock.millis()).save(txn,
-        datastore);
+    return connectionModel.setState(state).save(txn, datastore, clock);
   }
 
   // Cannot be transactional.
@@ -96,26 +94,25 @@ public final class ConnectionDao {
         .collect(ImmutableList.toImmutableList());
   }
 
-  public static class ConnectionModel extends DatastoreModel<Connection, ConnectionModel> {
+  public static class ConnectionModel extends DatastoreModel<ConnectionModel> {
     static final String KIND = "Connection";
     private static final String PROPERTY_OWNER_USER_ID = "OwnerUserID";
     private static final String PROPERTY_TARGET_USER_ID = "TargetUserID";
-    private static final String PROPERTY_CREATED_TIMESTAMP_MILLIS = "CreatedTimestampMillis";
     private static final String PROPERTY_STATE = "State";
-    private static final String PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS =
-        "LastUpdatedTimestampMillis";
 
     private ConnectionModel(Entity entity) {
       super(entity);
     }
 
-    @Override
+    /** Returns a protobuf model representing the underlying entity. */
     public Connection toProto() {
-      Connection.Builder connection = Connection.newBuilder().setID(getID())
-          .setOwnerUserID(getOwnerUserID()).setTargetUserID(getTargetUserID()).setState(getState())
-          .setCreatedTimestampMillis(getCreatedTimestampMillis());
-      getLastUpdatedTimestampMillis().ifPresent(connection::setLastUpdatedTimestampMillis);
-      return connection.build();
+      return Connection.newBuilder().setID(getID()).setOwnerUserID(getOwnerUserID())
+          .setTargetUserID(getTargetUserID()).setState(getState())
+          .setTimestampMillis(getTimestampMillis()).build();
+    }
+
+    public String getID() {
+      return getKey().getName();
     }
 
     public String getOwnerUserID() {
@@ -142,25 +139,6 @@ public final class ConnectionDao {
 
     private ConnectionModel setState(ConnectionState state) {
       entity.setProperty(PROPERTY_STATE, state.name());
-      return this;
-    }
-
-    public long getCreatedTimestampMillis() {
-      return (long) entity.getProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS);
-    }
-
-    private ConnectionModel setCreatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(PROPERTY_CREATED_TIMESTAMP_MILLIS, timestampMillis);
-      return this;
-    }
-
-    public OptionalLong getLastUpdatedTimestampMillis() {
-      Optional<Long> value = getOptionalProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS);
-      return value.isPresent() ? OptionalLong.of(value.get()) : OptionalLong.empty();
-    }
-
-    public ConnectionModel setLastUpdatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(PROPERTY_LAST_UPDATED_TIMESTAMP_MILLIS, timestampMillis);
       return this;
     }
   }

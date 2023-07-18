@@ -8,12 +8,12 @@ option java_multiple_files = true;
 // A chat with at least one participant.
 message Chat {
   string ID = 1;
-  // Timestamp when the chat was created.
-  int64 CreatedTimestampMillis = 2;
   // IDs of the participating users.
-  repeated string ParticipantUserIDs = 3;
+  repeated string ParticipantUserIDs = 2;
   // Generated key by which a chat can be indexed by the set of participants.
-  string UniqueParticipantsSearchKey = 4;
+  string UniqueParticipantsSearchKey = 3;
+  // Timestamp when the entity was last updated or created.
+  int64 TimestampMillis = 4;
   // ID of the most recent message within this chat.
   // Note that message IDs are sequentially generated.
   int64 MostRecentMessageID = 5;
@@ -26,8 +26,8 @@ message ChatMessage {
   // Messages within a chat are numbered starting from one and increasing by
   // exactly one for every message that is posted to the chat.
   int64 MessageID = 2;
-  // Timestamp when the message was created.
-  int64 CreatedTimestampMillis = 3;
+  // Timestamp when the entity was last updated or created.
+  int64 TimestampMillis = 3;
   // ID of the user that authored this message.
   string UserID = 4;
   // Text entered by the user, if any.
@@ -38,8 +38,8 @@ message ChatParticipant {
   string ChatID = 1;
   // ID of the user to whom this state applies.
   string UserID = 2;
-  // Timestamp when the entity was created.
-  int64 CreatedTimestampMillis = 3;
+  // Timestamp when the entity was last updated or created.
+  int64 TimestampMillis = 3;
   // Most recent message ID observed as proxy for the user.
   optional int64 MostRecentObservedMessageID = 4;
   // Draft text entered by the user, if any.
@@ -64,9 +64,8 @@ message Connection {
   }
   // The state of the connection.
   ConnectionState State = 4;
-
-  int64 CreatedTimestampMillis = 5;
-  optional int64 LastUpdatedTimestampMillis = 6;
+  // Timestamp when the entity was last updated or created.
+  int64 TimestampMillis = 5;
 }
 
 // An user's device contact that has been invited by their phone number.
@@ -74,17 +73,18 @@ message Contact {
   string ID = 1;
   // ID of the user that owns and sends out the invite.
   string OwnerUserID = 2;
-  int64 CreatedTimestampMillis = 3;
+  // Timestamp when the entity was last updated or created.
+  int64 TimestampMillis = 3;
   string Name = 4;
   string PhoneNumber = 5;
-  optional int64 LastUpdatedTimestampMillis = 6;
 }
 
 message Image {
   string ID = 1;
   // ID of the user that uploaded and owns the image.
   string UserID = 2;
-  int64 CreatedTimestampMillis = 3;
+  // Timestamp when the entity was last updated or created.
+  int64 TimestampMillis = 3;
   // URL that can dynamically serve the image blob.
   string URL = 4;
 }
@@ -92,9 +92,9 @@ message Image {
 message Profile {
   string UserID = 1;
   string PhoneNumber = 2;
-  int64 CreatedTimestampMillis = 3;
+  // Timestamp when the entity was last updated or created.
+  int64 TimestampMillis = 3;
   optional string Name = 4;
   optional string EmailAddress = 5;
   optional Image Image = 6;
-  optional int64 LastUpdatedTimestampMillis = 7;
 }

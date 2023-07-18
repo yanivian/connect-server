@@ -57,10 +57,9 @@ public final class ChatDao {
 
   public ChatModel createChat(Transaction txn, ImmutableSet<String> participantUserIDs) {
     Entity entity = new Entity(ChatModel.KIND, UUID.randomUUID().toString());
-    return new ChatModel(entity).setCreatedTimestampMillis(clock.millis())
-        .setParticipantUserIDs(participantUserIDs)
+    return new ChatModel(entity).setParticipantUserIDs(participantUserIDs)
         .setUniqueParticipantsSearchKey(toUniqueParticipantsSearchKey(participantUserIDs))
-        .setMostRecentMessageID(1L).save(txn, datastore);
+        .setMostRecentMessageID(1L).save(txn, datastore, clock);
   }
 
   /** Find the chat associated with the given participants. */
@@ -81,12 +80,11 @@ public final class ChatDao {
         .collect(ImmutableList.toImmutableList());
   }
 
-  public static final class ChatModel extends DatastoreModel<Chat, ChatModel> {
+  public static final class ChatModel extends DatastoreModel<ChatModel> {
 
     private static final String KIND = "Chat";
 
     private static final class Columns {
-      static final String CreatedTimestampMillis = "CreatedTimestampMillis";
       static final String ParticipantUserIDs = "ParticipantUserIDs";
       static final String UniqueParticipantsSearchKey = "UniqueParticipantsSearchKey";
       static final String MostRecentMessageID = "MostRecentMessageID";
@@ -97,7 +95,7 @@ public final class ChatDao {
       super(entity);
     }
 
-    @Override
+    /** Returns a protobuf model representing the underlying entity. */
     public Chat toProto() {
       return Chat.newBuilder().setID(getID()).addAllParticipantUserIDs(getParticipantUserIDs())
           .setUniqueParticipantsSearchKey(getUniqueParticipantsSearchKey())
@@ -105,13 +103,9 @@ public final class ChatDao {
           .build();
     }
 
-    private ChatModel setCreatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(Columns.CreatedTimestampMillis, timestampMillis);
-      return this;
-    }
-
-    public long getCreatedTimestampMillis() {
-      return (long) entity.getProperty(Columns.CreatedTimestampMillis);
+    /** Returns the name associated with the entity key. */
+    public final String getID() {
+      return getKey().getName();
     }
 
     private ChatModel setParticipantUserIDs(Collection<String> participantUserIDs) {
@@ -130,7 +124,7 @@ public final class ChatDao {
       return this;
     }
 
-    String getUniqueParticipantsSearchKey() {
+    public String getUniqueParticipantsSearchKey() {
       return (String) entity.getProperty(Columns.UniqueParticipantsSearchKey);
     }
 

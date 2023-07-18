@@ -51,8 +51,7 @@ public final class ChatMessageDao {
   public ChatMessageModel createChatMessage(Transaction txn, String chatID, long messageID,
       String userID, Optional<String> text) {
     Entity entity = new Entity(ChatMessageModel.KIND, messageID, ChatDao.toKey(chatID));
-    return new ChatMessageModel(entity).setCreatedTimestampMillis(clock.millis()).setUserID(userID)
-        .setText(text).save(txn, datastore);
+    return new ChatMessageModel(entity).setUserID(userID).setText(text).save(txn, datastore, clock);
   }
 
   /** Lists messages in a given chat in decreasing order of message ID. */
@@ -63,12 +62,11 @@ public final class ChatMessageDao {
         .collect(ImmutableList.toImmutableList());
   }
 
-  public static final class ChatMessageModel extends DatastoreModel<ChatMessage, ChatMessageModel> {
+  public static final class ChatMessageModel extends DatastoreModel<ChatMessageModel> {
 
     private static final String KIND = "ChatMessage";
 
     private static final class Columns {
-      static final String CreatedTimestampMillis = "CreatedTimestampMillis";
       static final String UserID = "UserID";
       static final String Text = "Text";
     }
@@ -77,11 +75,11 @@ public final class ChatMessageDao {
       super(entity);
     }
 
-    @Override
+    /** Returns a protobuf model representing the underlying entity. */
     public ChatMessage toProto() {
       ChatMessage.Builder chatMessage =
           ChatMessage.newBuilder().setChatID(getChatID()).setMessageID(getMessageID())
-              .setCreatedTimestampMillis(getCreatedTimestampMillis()).setUserID(getUserID());
+              .setTimestampMillis(getTimestampMillis()).setUserID(getUserID());
       getText().ifPresent(chatMessage::setText);
       return chatMessage.build();
     }
@@ -96,15 +94,6 @@ public final class ChatMessageDao {
 
     public ChatMessageKey getChatMessageKey() {
       return toChatMessageKey(getChatID(), getMessageID());
-    }
-
-    public ChatMessageModel setCreatedTimestampMillis(long timestampMillis) {
-      entity.setProperty(Columns.CreatedTimestampMillis, timestampMillis);
-      return this;
-    }
-
-    public long getCreatedTimestampMillis() {
-      return (long) entity.getProperty(Columns.CreatedTimestampMillis);
     }
 
     public ChatMessageModel setUserID(String userID) {

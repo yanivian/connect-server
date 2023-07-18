@@ -1,13 +1,23 @@
 package com.yanivian.connect.backend.dao;
 
+import java.time.Clock;
 import java.util.Optional;
+import java.util.OptionalLong;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.Transaction;
-import com.google.protobuf.Message;
 
-public abstract class DatastoreModel<M extends Message, DM extends DatastoreModel<M, DM>> {
+/**
+ * Base datastore model that abstracts created and last modified timestamp management, and provides
+ * helper methods to access required and optional properties to implementing classes.
+ */
+public abstract class DatastoreModel<DM extends DatastoreModel<DM>> {
+
+  protected static final class CommonColumns {
+    static final String CreatedTimestampMillis = "CreatedTimestampMillis";
+    static final String LastUpdatedTimestampMillis = "LastUpdatedTimestampMillis";
+  }
 
   protected final Entity entity;
 
@@ -17,7 +27,13 @@ public abstract class DatastoreModel<M extends Message, DM extends DatastoreMode
 
   /** Saves any changes made to the entity to Datastore. */
   @SuppressWarnings("unchecked")
-  public final DM save(Transaction txn, DatastoreService datastore) {
+  public final DM save(Transaction txn, DatastoreService datastore, Clock clock) {
+    long timestampMillis = clock.millis();
+    if (entity.hasProperty(CommonColumns.CreatedTimestampMillis)) {
+      setLastUpdatedTimestampMillis(timestampMillis);
+    } else {
+      setCreatedTimestampMillis(timestampMillis);
+    }
     datastore.put(txn, entity);
     return (DM) this;
   }
@@ -27,13 +43,30 @@ public abstract class DatastoreModel<M extends Message, DM extends DatastoreMode
     return entity.getKey();
   }
 
-  /** Returns the name associated with the entity key. */
-  public final String getID() {
-    return entity.getKey().getName();
+  @SuppressWarnings("unchecked")
+  private DM setCreatedTimestampMillis(long timestampMillis) {
+    entity.setProperty(CommonColumns.CreatedTimestampMillis, timestampMillis);
+    return (DM) this;
   }
 
-  /** Returns a protobuf model representing the underlying entity. */
-  public abstract M toProto();
+  @SuppressWarnings("unchecked")
+  private DM setLastUpdatedTimestampMillis(long timestampMillis) {
+    entity.setProperty(CommonColumns.LastUpdatedTimestampMillis, timestampMillis);
+    return (DM) this;
+  }
+
+  private long getCreatedTimestampMillis() {
+    return (long) entity.getProperty(CommonColumns.CreatedTimestampMillis);
+  }
+
+  private OptionalLong getLastUpdatedTimestampMillis() {
+    Optional<Long> value = getOptionalProperty(CommonColumns.LastUpdatedTimestampMillis);
+    return value.isPresent() ? OptionalLong.of(value.get()) : OptionalLong.empty();
+  }
+
+  public long getTimestampMillis() {
+    return getLastUpdatedTimestampMillis().orElseGet(this::getCreatedTimestampMillis);
+  }
 
   @SuppressWarnings("unchecked")
   protected <T> Optional<T> getOptionalProperty(String propertyName) {

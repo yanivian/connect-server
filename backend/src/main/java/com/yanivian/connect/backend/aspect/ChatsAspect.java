@@ -143,6 +143,7 @@ public final class ChatsAspect {
     });
   }
 
+  // Expects that the chat's most recent message ID is transactionally available.
   private ChatSlice postMessage(Transaction txn, String userID, ChatModel chat,
       Optional<String> text) {
     // Fail if message already exists.
